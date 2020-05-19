@@ -165,80 +165,77 @@ class Analysis:
            error = self.compute_error( self.reflectivity, self.testcase.reflec_ref )
            self.check_error( error, tolerance=5.e-2 )
 
-    #---------------------------------------------------------------------------
-    # Plotting
-    #---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+# Utilities
+#---------------------------------------------------------------------------
 
-    def plot_field( self, field, plane='none', label='none', save=False, name='figure.png' ):
-        fg = plt.figure()
-        ax = fg.add_subplot( 111 )
-        vlmin = field.min()
-        vlmax = field.max()
-        clmin = vlmin #self.compute_clevels_limits( vlmin )
-        clmax = vlmax #self.compute_clevels_limits( vlmax )
-        clevels = np.linspace( clmin, clmax, 101 )
-        if ( plane == 'none' ):
-           return
-        if ( plane == 'xy' ):
-           if self.is2D:
-              return
-           im = ax.imshow( field.transpose(), extent=self.edges[0], vmin=clmin, vmax=clmax, aspect='auto' )
-           ax.set_xlabel( r'$x$' )
-           ax.set_ylabel( r'$y$' )
-        if ( plane == 'xz' ):
-           if self.is2D:
-              im = ax.imshow( field.transpose(), extent=self.edges[0], vmin=clmin, vmax=clmax, aspect='auto' )
-           else:
-              im = ax.imshow( field.transpose(), extent=self.edges[1], vmin=clmin, vmax=clmax, aspect='auto' )
-           ax.set_xlabel( r'$x$' )
-           ax.set_ylabel( r'$z$' )
-        if ( plane == 'yz' ):
-           if self.is2D:
-              return
-           im = ax.imshow( field.transpose(), extent=self.edges[2], vmin=clmin, vmax=clmax, aspect='auto' )
-           ax.set_xlabel( r'$y$' )
-           ax.set_ylabel( r'$z$' )
-        #field_name = retrieve_name( field )[0] # read name string from variable
-        if ( label == 'none' ):
-           ax.set_title( r'$(t=%d)$: min$=%g$, max$=%g$' %(self.time,vlmin,vlmax), fontsize=10 )
-        else:
-           ax.set_title( label+r'$(t=%d)$: min$=%g$, max$=%g$' %(self.time,vlmin,vlmax), fontsize=10 )
-        ax.xaxis.set_major_locator( plt.MaxNLocator(5) )
-        ax.yaxis.set_major_locator( plt.MaxNLocator(5) )
-        cb = fg.colorbar( im, ax=ax )
-        #cb = fg.colorbar( im, ax=ax, orientation='horizontal', pad=0.2 )
-        #tk = np.linspace( clmin, clmax, 10 )
-        #cb.set_ticks( tk )
-        cb.ax.tick_params()
-        cb.ax.yaxis.get_offset_text().set()
-        cb.ax.yaxis.offsetText.set_ha( 'center' )
-        cb.ax.yaxis.offsetText.set_va( 'bottom' )
-        cb.formatter.set_powerlimits( (0,0) )
-        cb.update_ticks()
-        fg.tight_layout()
-        fg.show()
-        if save:
-           fg.savefig( name, dpi=100 )
+def plot_field( field, edges, pltlim=None, plane='none', label='none', save=False, name='figure.png' ):
+    is2D = True if len( field.shape ) == 2 else False
+    fg = plt.figure()
+    ax = fg.add_subplot( 111 )
+    vlmin = field.min()
+    vlmax = field.max()
+    if pltlim:
+       clmin = pltlim[0]
+       clmax = pltlim[1]
+    else:
+       clmin = vlmin #compute_clevels_limits( vlmin )
+       clmax = vlmax #compute_clevels_limits( vlmax )
+    clevels = np.linspace( clmin, clmax, 101 )
+    if ( plane == 'none' ):
+       return
+    if ( plane == 'xy' ):
+       if is2D:
+          return
+       im = ax.imshow( field.transpose(), extent=edges[0], vmin=clmin, vmax=clmax, aspect='auto' )
+       ax.set_xlabel( r'$x$' )
+       ax.set_ylabel( r'$y$' )
+    if ( plane == 'xz' ):
+       if is2D:
+          im = ax.imshow( field.transpose(), extent=edges[0], vmin=clmin, vmax=clmax, aspect='auto' )
+       else:
+          im = ax.imshow( field.transpose(), extent=edges[1], vmin=clmin, vmax=clmax, aspect='auto' )
+       ax.set_xlabel( r'$x$' )
+       ax.set_ylabel( r'$z$' )
+    if ( plane == 'yz' ):
+       if is2D:
+          return
+       im = ax.imshow( field.transpose(), extent=edges[2], vmin=clmin, vmax=clmax, aspect='auto' )
+       ax.set_xlabel( r'$y$' )
+       ax.set_ylabel( r'$z$' )
+    #field_name = retrieve_name( field )[0] # read name string from variable
+    if ( label == 'none' ):
+       ax.set_title( r'min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
+    else:
+       ax.set_title( label+r': min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
+    ax.xaxis.set_major_locator( plt.MaxNLocator(5) )
+    ax.yaxis.set_major_locator( plt.MaxNLocator(5) )
+    cb = fg.colorbar( im, ax=ax )
+    #cb = fg.colorbar( im, ax=ax, orientation='horizontal', pad=0.2 )
+    #tk = np.linspace( clmin, clmax, 10 )
+    #cb.set_ticks( tk )
+    cb.ax.tick_params()
+    cb.ax.yaxis.get_offset_text().set()
+    cb.ax.yaxis.offsetText.set_ha( 'center' )
+    cb.ax.yaxis.offsetText.set_va( 'bottom' )
+    cb.formatter.set_powerlimits( (0,0) )
+    cb.update_ticks()
+    fg.tight_layout()
+    fg.show()
+    if save:
+       fg.savefig( name, dpi=100 )
 
-    #---------------------------------------------------------------------------
-    # Utilities
-    #---------------------------------------------------------------------------
+def compute_clevels_limits( value ):
+    power = np.floor( np.log10( np.abs( value ) ) )
+    limit = np.sign( value ) * np.ceil( np.abs( value ) / 10**power ) * 10**power
+    return limit
 
-    def compute_clevels_limits( self, value ):
-        power = np.floor( np.log10( np.abs( value ) ) )
-        limit = np.sign( value ) * np.ceil( np.abs( value ) / 10**power ) * 10**power
-        return limit
+def retrieve_name( var ):
+    callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
+    return [ var_name for var_name, var_val in callers_local_vars if var_val is var ]
 
-    def retrieve_name( self, var ):
-        callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
-        return [ var_name for var_name, var_val in callers_local_vars if var_val is var ]
-
-    def set_LaTeX( self ):
-        from matplotlib import rc
-        rc( 'font', **{'family':'sans-serif','sans-serif':['Helvetica']} )
-        rc( 'text', usetex=True )
-        mpl.rcParams[ 'text.latex.preamble' ] = [ r"\usepackage{amsmath}" ]
-
-    def set_style( self, fs=10, lw=1.0 ):
-        self.fs = fs
-        self.lw = lw
+def set_LaTeX():
+    from matplotlib import rc
+    rc( 'font', **{'family':'sans-serif','sans-serif':['Helvetica']} )
+    rc( 'text', usetex=True )
+    mpl.rcParams[ 'text.latex.preamble' ] = [ r"\usepackage{amsmath}" ]

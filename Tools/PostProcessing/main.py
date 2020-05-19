@@ -12,10 +12,19 @@ import yt
 import read_raw_data
 
 from analysis import Analysis
+from analysis import plot_field
 from testcase import TestCase
 
-path = sys.argv[1]
+path = []
+for a in sys.argv[1:]:
+   path.append( a )
 
-backtransf = True if re.findall( 'lab_frame_data', path ) else False
+backtransf = []
+for p in path:
+    backtransf.append( True if re.findall( 'lab_frame_data', p ) else False )
 
-this = Analysis( path, backtransf )
+data = []
+indx = 0
+for p in path:
+    data.append( Analysis( p, backtransf[indx] ) )
+    indx += 1
