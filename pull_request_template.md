@@ -30,8 +30,7 @@ I followed WarpX's style guidelines:
 * [ ] I used 4 spaces for indentation (no tabs)
 * [ ] I kept the number of characters per line approximately < 100
 * [ ] I added a space before and after all assignemnt operators `=`
-* [ ] To **define** a new function, I added a space between the function name and the parentheses
-* [ ] To **call** a new function, I did not add a space between the function name and the parentheses
+* [ ] To define a new function, I added a space between the function name and the parentheses (no space to call the function)
 * [ ] I did not include (too many) style changes that are not related to this PR
 * [ ] I used the `CamelCase` naming convention for new files and new classes
 * [ ] I prefixed all the member variables of my new classes with `m_`
