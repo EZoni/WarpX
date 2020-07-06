@@ -28,7 +28,7 @@ class Analysis:
                                                 left_edge=self.ds.domain_left_edge, \
                                                 dims=self.ds.domain_dimensions )
                self.is2D = True if self.ds.domain_dimensions[2] == 1 else False
-               self.time = int( (re.search( 'diags/diag(.*)/', path )).group(1) )
+               #self.time = int( (re.search( 'diags/diag(.*)/', path )).group(1) )
                self.extract_domain_2D_edges()
                self.get_fields()
                self.testcase = TestCase( testcase )
@@ -37,7 +37,7 @@ class Analysis:
                self.header = re.sub( (re.search( 'snapshots/(.*)', path )).group(1), 'Header', path )
                self.allrd, self.info = read_raw_data.read_lab_snapshot( self.snapshot, self.header )
                self.is2D = True if self.info['ny'] == 2 else False
-               self.time = int( (re.search( 'snapshots/snapshot(.*)/', path )).group(1) )
+               #self.time = int( (re.search( 'snapshots/snapshot(.*)/', path )).group(1) )
                self.extract_domain_2D_edges()
                self.get_fields()
 
@@ -204,10 +204,12 @@ def plot_field( field, edges, pltlim=None, plane='none', label='none', save=Fals
        ax.set_xlabel( r'$y$' )
        ax.set_ylabel( r'$z$' )
     #field_name = retrieve_name( field )[0] # read name string from variable
-    if ( label == 'none' ):
-       ax.set_title( r'min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
-    else:
-       ax.set_title( label+r': min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
+    #if ( label == 'none' ):
+    #   ax.set_title( r'min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
+    #else:
+    #   ax.set_title( label+r': min$=%g$, max$=%g$' %(vlmin,vlmax), fontsize=10 )
+    if ( label != 'none' ):
+       ax.set_title( label, fontsize=10 )
     ax.xaxis.set_major_locator( plt.MaxNLocator(5) )
     ax.yaxis.set_major_locator( plt.MaxNLocator(5) )
     cb = fg.colorbar( im, ax=ax )

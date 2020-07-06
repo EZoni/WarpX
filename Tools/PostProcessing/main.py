@@ -15,6 +15,8 @@ from analysis import Analysis
 from analysis import plot_field
 from testcase import TestCase
 
+eps0 = scc.epsilon_0
+
 path = []
 for a in sys.argv[1:]:
    path.append( a )
