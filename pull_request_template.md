@@ -1,13 +1,10 @@
 **What is the goal of this PR?**
-
 Describe here the goal of your PR.
 
 **Description**
-
 Describe here the details of your PR.
 
 **How did I test this PR?**
-
 Describe here how you tested your PR.
 
 **Checklists**
