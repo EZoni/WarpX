@@ -7,7 +7,7 @@ Describe here the goal of your PR.
 
 Description
 ---
-###### You may [create permanent links](https://docs.github.com/en/github/managing-your-work-on-github/creating-a-permanent-link-to-a-code-snippet) of the most important code changes in order to guide reviewers through your new implementation.
+###### You may [create permanent links](https://docs.github.com/en/github/managing-your-work-on-github/creating-a-permanent-link-to-a-code-snippet) to the most important code changes in order to guide reviewers through your new implementation.
 
 Describe here the details of your PR.
 
