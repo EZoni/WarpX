@@ -1,37 +1,26 @@
-### What is the goal of this PR?
+What is the goal of this PR?
+---
 
 Describe here the goal of your PR.
 
-### Description
+Description
+---
 ###### Hint: You may [create permanent links](https://docs.github.com/en/github/managing-your-work-on-github/creating-a-permanent-link-to-a-code-snippet) of the most important code changes in order to guide reviewers through your implementation.
 
 Describe here the details of your PR.
 
-### How did I test this PR?
+How did I test this PR?
+---
 ###### Hint: You may link to other PRs or issues where your implementation is merged and tested as well as include relevant plots and tables. 
 
 Describe here how you tested your PR.
 
-### Checklists
-###### 
+Checklists
+--- 
 
 GPU portability:
 * [ ] The GPU build is successful
 * [ ] The GPU CI tests pass
-
-Files changed in:
-* [ ] Source/BoundaryConditions
-* [ ] Source/Diagnostics
-* [ ] Source/Evolve
-* [ ] Source/FieldSolver
-* [ ] Source/Filter
-* [ ] Source/Initialization
-* [ ] Source/Laser
-* [ ] Source/Parallelization
-* [ ] Source/Parser
-* [ ] Source/Particles
-* [ ] Source/Python
-* [ ] Source/Utils
 
 Style guidelines:
 * [ ] I used 4 spaces for indentation (no tabs)
