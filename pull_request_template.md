@@ -19,7 +19,6 @@ Describe here how you tested your PR.
 
 Checklists
 --- 
-###### You may check the appropriate items in the following lists in order to facilitate the review process.
 
 Documentation:
 * [ ] I added [Doxygen comments](https://www.doxygen.nl/manual/docblocks.html) (header files only)
