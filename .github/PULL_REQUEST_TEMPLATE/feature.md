@@ -1,3 +1,9 @@
+---
+name: "New feature"
+about: Open a pull request to merge a new feature
+labels: "enhancement"
+---
+
 <!--
 Make sure that your PR's description is up-to-date at every stage of the review process: if your PR is still a work in progress, convert it to a draft; if your PR is ready for review, mark it as ready for review. When your PR is ready for review, request a review from both WarpX admins and WarpX contributors and assign the PR to at least one WarpX admin. Once you have addressed all reviewers' comments, request a new review and continue to do so until your PR is approved.
 -->
