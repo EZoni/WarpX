@@ -29,10 +29,14 @@ import checksumAPI
 # this will be the name of the plot file
 fn = sys.argv[1]
 
-# Parse test name and check if current correction (psatd.do_current_correction=1) is applied
+# Parse test name and check if current correction (psatd.current_correction=1) is applied
 current_correction = True if re.search( 'current_correction', fn ) else False
+
 # Parse test name and check if Esirkepov deposition (algo.current_deposition=esirkepov) is used
 esirkepov_deposition = True if re.search( 'Esirkepov', fn ) else False
+
+# Parse test name and check if Vay current deposition (algo.current_deposition=vay) is used
+vay_deposition = True if re.search( 'Vay_deposition', fn ) else False
 
 # Parameters (these parameters must match the parameters in `inputs.multi.rt`)
 epsilon = 0.01
@@ -90,11 +94,8 @@ for field in ['particle_momentum_y',
     print('assert that this is NOT in ds.field_list', (species, field))
     assert (species, field) not in ds.field_list
 species = 'positrons'
-for field in ['particle_Ey']:
-    print('assert that this is in ds.field_list', (species, field))
-    assert (species, field) in ds.field_list
-for field in ['particle_momentum_y',
-              'particle_momentum_z']:
+for field in ['particle_momentum_x',
+              'particle_momentum_y']:
     print('assert that this is NOT in ds.field_list', (species, field))
     assert (species, field) not in ds.field_list
 
@@ -131,13 +132,11 @@ print("tolerance_rel: " + str(tolerance_rel))
 
 assert( error_rel < tolerance_rel )
 
-# Check relative L-infinity spatial norm of rho/epsilon_0 - div(E) when
-# current correction (psatd.do_current_correction=1) is applied or when
-# Esirkepov deposition (algo.current_deposition=esirkepov) is used
-if current_correction or esirkepov_deposition:
+# Check relative L-infinity spatial norm of div(E) - rho/eps0
+if esirkepov_deposition or current_correction or esirkepov_deposition:
     rho  = data['rho' ].to_ndarray()
     divE = data['divE'].to_ndarray()
-    error_rel = np.amax( np.abs( rho/epsilon_0 - divE ) ) / np.amax( np.abs( rho/epsilon_0 ) )
+    error_rel = np.amax( np.abs( divE - rho/epsilon_0 ) ) / np.amax( np.abs( rho/epsilon_0 ) )
     tolerance = 1.e-9
     print("Check charge conservation:")
     print("error_rel = {}".format(error_rel))
