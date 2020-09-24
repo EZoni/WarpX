@@ -134,8 +134,8 @@ def plot_snapshot(filename):
                   ds.domain_left_edge[0], ds.domain_right_edge[0]]
         # Plot field quantities with matplotlib
         im = ax.imshow(F, aspect = 'auto', extent = extent, origin = 'lower')
-        for cl in im.collections:
-            cl.set_edgecolor('face')
+        #for cl in im.collections:
+        #    cl.set_edgecolor('face')
         if vmax is not None:
             im.set_clim(-vmax, vmax)
 
