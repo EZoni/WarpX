@@ -400,9 +400,9 @@ void warpx_interp_nd_bfield_x (int j, int k, int l,
 #if (AMREX_SPACEDIM == 2)
     amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
     amrex::Real res = 0.;
-    for (int nz = 0; nz < noz/2; nz++) {
-        res += Bxf(j, k + nz    , l)
-             + Bxf(j, k - nz - 1, l);
+    for (int nz = 1; nz < noz/2+1; nz++) {
+        res += Bxf(j, k + nz - 1, l)
+             + Bxf(j, k - nz    , l);
         res *= 0.5 * cz[nz];
     }
     Bxa(j,k,l) = res;
@@ -433,12 +433,12 @@ void warpx_interp_nd_bfield_y (int j, int k, int l,
     amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
     amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
     amrex::Real res = 0.;
-    for (int nz = 0; nz < noz/2; nz++) {
-        for (int nx = 0; nx < nox/2; nx++) {
-            res += Byf(j + nx    , k + nz    , l)
-                 + Byf(j - nx - 1, k + nz    , l)
-                 + Byf(j + nx    , k - nz - 1, l)
-                 + Byf(j - nx - 1, k - nz - 1, l);
+    for (int nz = 1; nz < noz/2+1; nz++) {
+        for (int nx = 1; nx < nox/2+1; nx++) {
+            res += Byf(j + nx - 1, k + nz - 1, l)
+                 + Byf(j - nx    , k + nz - 1, l)
+                 + Byf(j + nx - 1, k - nz    , l)
+                 + Byf(j - nx    , k - nz    , l);
             res *= 0.5 * cx[nx];
             res *= 0.5 * cz[nz];
         }
@@ -470,9 +470,9 @@ void warpx_interp_nd_bfield_z (int j, int k, int l,
 #if (AMREX_SPACEDIM == 2)
     amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
     amrex::Real res = 0.;
-    for (int nx = 0; nx < nox/2; nx++) {
-        res += Bzf(j + nx    , k, l)
-             + Bzf(j - nx - 1, k, l);
+    for (int nx = 1; nx < nox/2+1; nx++) {
+        res += Bzf(j + nx - 1, k, l)
+             + Bzf(j - nx    , k, l);
         res *= 0.5 * cx[nx];
     }
     Bza(j,k,l) = res;
@@ -701,9 +701,9 @@ void warpx_interp_nd_efield_x (int j, int k, int l,
     amrex::ignore_unused(l);
     amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
     amrex::Real res = 0.;
-    for (int nx = 0; nx < nox/2; nx++) {
-        res += Exf(j + nx    , k, l)
-             + Exf(j - nx - 1, k, l);
+    for (int nx = 1; nx < nox/2+1; nx++) {
+        res += Exf(j + nx - 1, k, l)
+             + Exf(j - nx    , k, l);
         res *= 0.5 * cx[nx];
     }
     Exa(j,k,l) = res;
@@ -742,9 +742,9 @@ void warpx_interp_nd_efield_z (int j, int k, int l,
 #if (AMREX_SPACEDIM == 2)
     amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
     amrex::Real res = 0.;
-    for (int nz = 0; nz < noz/2; nz++) {
-        res += Ezf(j, k + nz    , l)
-             + Ezf(j, k - nz - 1, l);
+    for (int nz = 1; nz < noz/2+1; nz++) {
+        res += Ezf(j, k + nz - 1, l)
+             + Ezf(j, k - nz    , l);
         res *= 0.5 * cz[nz];
     }
     Eza(j,k,l) = res;
