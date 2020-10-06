@@ -93,12 +93,17 @@ WarpX::UpdateAuxilaryDataStagToNodal ()
         amrex::ParallelFor(bx,
         [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
         {
-            warpx_interp_nd_bfield_x(j,k,l, bx_aux, bx_fp);
-            warpx_interp_nd_bfield_y(j,k,l, by_aux, by_fp);
-            warpx_interp_nd_bfield_z(j,k,l, bz_aux, bz_fp);
-            warpx_interp_nd_efield_x(j,k,l, ex_aux, ex_fp);
+            warpx_interp_nd_bfield_x(j,k,l, bx_aux, bx_fp,
+                WarpX::field_gathering_nox, WarpX::field_gathering_noy, WarpX::field_gathering_noz);
+            warpx_interp_nd_bfield_y(j,k,l, by_aux, by_fp,
+                WarpX::field_gathering_nox, WarpX::field_gathering_noy, WarpX::field_gathering_noz);
+            warpx_interp_nd_bfield_z(j,k,l, bz_aux, bz_fp,
+                WarpX::field_gathering_nox, WarpX::field_gathering_noy, WarpX::field_gathering_noz);
+            warpx_interp_nd_efield_x(j,k,l, ex_aux, ex_fp,
+                WarpX::field_gathering_nox, WarpX::field_gathering_noy, WarpX::field_gathering_noz);
             warpx_interp_nd_efield_y(j,k,l, ey_aux, ey_fp);
-            warpx_interp_nd_efield_z(j,k,l, ez_aux, ez_fp);
+            warpx_interp_nd_efield_z(j,k,l, ez_aux, ez_fp,
+                WarpX::field_gathering_nox, WarpX::field_gathering_noy, WarpX::field_gathering_noz);
         });
     }
 

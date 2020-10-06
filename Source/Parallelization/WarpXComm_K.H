@@ -7,6 +7,9 @@
 #ifndef WARPX_COMM_K_H_
 #define WARPX_COMM_K_H_
 
+#ifdef WARPX_USE_PSATD
+#include "FieldSolver/SpectralSolver/SpectralKSpace.H"
+#endif
 #include <AMReX_FArrayBox.H>
 #include <AMReX.H>
 
@@ -381,39 +384,102 @@ void warpx_interp_nd_bfield_z (int j, int k, int l,
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void warpx_interp_nd_bfield_x (int j, int k, int l,
                                amrex::Array4<amrex::Real> const& Bxa,
-                               amrex::Array4<amrex::Real const> const& Bxf)
+                               amrex::Array4<amrex::Real const> const& Bxf,
+                               int nox = 2, int noy = 2, int noz = 2)
 {
+// FDTD variant
+#ifndef WARPX_USE_PSATD
 #if (AMREX_SPACEDIM == 2)
     Bxa(j,k,0) = 0.5*(Bxf(j,k-1,0) + Bxf(j,k,0));
     amrex::ignore_unused(l);
 #else
     Bxa(j,k,l) = 0.25*(Bxf(j,k-1,l-1) + Bxf(j,k,l-1) + Bxf(j,k-1,l) + Bxf(j,k,l));
 #endif
+// PSATD variant
+#else
+#if (AMREX_SPACEDIM == 2)
+    amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
+    amrex::Real res = 0.;
+    for (int nz = 0; nz < noz/2; nz++) {
+        res += Bxf(j, k + nz    , l)
+             + Bxf(j, k - nz - 1, l);
+        res *= 0.5 * cz[nz];
+    }
+    Bxa(j,k,l) = res;
+#else
+    // TODO Implement high-order interpolation
+    Bxa(j,k,l) = 0.25*(Bxf(j,k-1,l-1) + Bxf(j,k,l-1) + Bxf(j,k-1,l) + Bxf(j,k,l));
+#endif
+#endif
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void warpx_interp_nd_bfield_y (int j, int k, int l,
                                amrex::Array4<amrex::Real> const& Bya,
-                               amrex::Array4<amrex::Real const> const& Byf)
+                               amrex::Array4<amrex::Real const> const& Byf,
+                               int nox = 2, int noy = 2, int noz = 2)
 {
+// FDTD variant
+#ifndef WARPX_USE_PSATD
 #if (AMREX_SPACEDIM == 2)
     Bya(j,k,0) = 0.25*(Byf(j,k,0) + Byf(j-1,k,0) + Byf(j,k-1,0) + Byf(j-1,k-1,0));
     amrex::ignore_unused(l);
 #else
     Bya(j,k,l) = 0.25*(Byf(j-1,k,l-1) + Byf(j,k,l-1) + Byf(j-1,k,l) + Byf(j,k,l));
 #endif
+// PSATD variant
+#else
+#if (AMREX_SPACEDIM == 2)
+    amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
+    amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
+    amrex::Real res = 0.;
+    for (int nz = 0; nz < noz/2; nz++) {
+        for (int nx = 0; nx < nox/2; nx++) {
+            res += Byf(j + nx    , k + nz    , l)
+                 + Byf(j - nx - 1, k + nz    , l)
+                 + Byf(j + nx    , k - nz - 1, l)
+                 + Byf(j - nx - 1, k - nz - 1, l);
+            res *= 0.5 * cx[nx];
+            res *= 0.5 * cz[nz];
+        }
+    }
+    Bya(j,k,l) = res;
+#else
+    // TODO Implement high-order interpolation
+    Bya(j,k,l) = 0.25*(Byf(j-1,k,l-1) + Byf(j,k,l-1) + Byf(j-1,k,l) + Byf(j,k,l));
+#endif
+#endif
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void warpx_interp_nd_bfield_z (int j, int k, int l,
                                amrex::Array4<amrex::Real> const& Bza,
-                               amrex::Array4<amrex::Real const> const& Bzf)
+                               amrex::Array4<amrex::Real const> const& Bzf,
+                               int nox = 2, int noy = 2, int noz = 2)
 {
+// FDTD variant
+#ifndef WARPX_USE_PSATD
 #if (AMREX_SPACEDIM == 2)
     Bza(j,k,0) = 0.5*(Bzf(j-1,k,0) + Bzf(j,k,0));
     amrex::ignore_unused(l);
 #else
     Bza(j,k,l) = 0.25*(Bzf(j-1,k-1,l) + Bzf(j,k-1,l) + Bzf(j-1,k,l) + Bzf(j,k,l));
+#endif
+// PSATD variant
+#else
+#if (AMREX_SPACEDIM == 2)
+    amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
+    amrex::Real res = 0.;
+    for (int nx = 0; nx < nox/2; nx++) {
+        res += Bzf(j + nx    , k, l)
+             + Bzf(j - nx - 1, k, l);
+        res *= 0.5 * cx[nx];
+    }
+    Bza(j,k,l) = res;
+#else
+    // TODO Implement high-order interpolation
+    Bza(j,k,l) = 0.25*(Bzf(j-1,k-1,l) + Bzf(j,k-1,l) + Bzf(j-1,k,l) + Bzf(j,k,l));
+#endif
 #endif
 }
 
@@ -624,9 +690,24 @@ void warpx_interp_nd_efield_z (int j, int k, int l,
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void warpx_interp_nd_efield_x (int j, int k, int l,
                                amrex::Array4<amrex::Real> const& Exa,
-                               amrex::Array4<amrex::Real const> const& Exf)
+                               amrex::Array4<amrex::Real const> const& Exf,
+                               int nox = 2, int noy = 2, int noz = 2)
 {
+// FDTD variant
+#ifndef WARPX_USE_PSATD
     Exa(j,k,l) = 0.5*(Exf(j-1,k,l) + Exf(j,k,l));
+// PSATD variant
+#else
+    amrex::ignore_unused(l);
+    amrex::Vector<amrex::Real> cx = getFonbergStencilCoefficients(nox, false);
+    amrex::Real res = 0.;
+    for (int nx = 0; nx < nox/2; nx++) {
+        res += Exf(j + nx    , k, l)
+             + Exf(j - nx - 1, k, l);
+        res *= 0.5 * cx[nx];
+    }
+    Exa(j,k,l) = res;
+#endif
 }
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
@@ -645,13 +726,32 @@ void warpx_interp_nd_efield_y (int j, int k, int l,
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE
 void warpx_interp_nd_efield_z (int j, int k, int l,
                                amrex::Array4<amrex::Real> const& Eza,
-                               amrex::Array4<amrex::Real const> const& Ezf)
+                               amrex::Array4<amrex::Real const> const& Ezf,
+                               int nox = 2, int noy = 2, int noz = 2)
 {
+// FDTD variant
+#ifndef WARPX_USE_PSATD
 #if (AMREX_SPACEDIM == 2)
     Eza(j,k,0) = 0.5*(Ezf(j,k-1,0) + Ezf(j,k,0));
     amrex::ignore_unused(l);
 #else
     Eza(j,k,l) = 0.5*(Ezf(j,k,l-1) + Ezf(j,k,l));
+#endif
+// PSATD variant
+#else
+#if (AMREX_SPACEDIM == 2)
+    amrex::Vector<amrex::Real> cz = getFonbergStencilCoefficients(noz, false);
+    amrex::Real res = 0.;
+    for (int nz = 0; nz < noz/2; nz++) {
+        res += Ezf(j, k + nz    , l)
+             + Ezf(j, k - nz - 1, l);
+        res *= 0.5 * cz[nz];
+    }
+    Eza(j,k,l) = res;
+#else
+    // TODO Implement high-order interpolation
+    Eza(j,k,l) = 0.5*(Ezf(j,k,l-1) + Ezf(j,k,l));
+#endif
 #endif
 }
 
