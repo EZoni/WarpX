@@ -61,10 +61,12 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 
         // Extract pointers for the k vectors
         const Real* modified_kx_arr = modified_kx_vec[mfi].dataPtr();
+        const Real* modified_kx_arr_staggered = modified_kx_vec_staggered[mfi].dataPtr();
 #if (AMREX_SPACEDIM==3)
         const Real* modified_ky_arr = modified_ky_vec[mfi].dataPtr();
 #endif
         const Real* modified_kz_arr = modified_kz_vec[mfi].dataPtr();
+        const Real* modified_kz_arr_staggered = modified_kz_vec_staggered[mfi].dataPtr();
 
         // Loop over indices within one box
         ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
@@ -87,12 +89,15 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 
             // k vector values
             const Real kx = modified_kx_arr[i];
+            const Real kx_staggered = modified_kx_arr_staggered[i];
 #if (AMREX_SPACEDIM==3)
             const Real ky = modified_ky_arr[j];
             const Real kz = modified_kz_arr[k];
 #else
             constexpr Real ky = 0;
+            constexpr Real ky_staggered = 0;
             const Real kz = modified_kz_arr[j];
+            const Real kz_staggered = modified_kz_arr_staggered[j];
 #endif
             // Physical constant c**2 and imaginary unit
             constexpr Real c2   = PhysConst::c*PhysConst::c;
@@ -117,16 +122,16 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 
                 // Ex
                 fields(i,j,k,Idx::Ex) = T2*C*Ex_old
-                            + T2*S_ck*c2*I*(ky*Bz_old - kz*By_old)
-                            + X4*Jx - I*(X2*rho_new - T2*X3*rho_old)*kx;
+                            + T2*S_ck*c2*I*(ky_staggered*Bz_old - kz_staggered*By_old)
+                            + X4*Jx - I*(X2*rho_new - T2*X3*rho_old)*kx_staggered;
                 // Ey
                 fields(i,j,k,Idx::Ey) = T2*C*Ey_old
-                            + T2*S_ck*c2*I*(kz*Bx_old - kx*Bz_old)
-                            + X4*Jy - I*(X2*rho_new - T2*X3*rho_old)*ky;
+                            + T2*S_ck*c2*I*(kz_staggered*Bx_old - kx_staggered*Bz_old)
+                            + X4*Jy - I*(X2*rho_new - T2*X3*rho_old)*ky_staggered;
                 // Ez
                 fields(i,j,k,Idx::Ez) = T2*C*Ez_old
-                            + T2*S_ck*c2*I*(kx*By_old - ky*Bx_old)
-                            + X4*Jz - I*(X2*rho_new - T2*X3*rho_old)*kz;
+                            + T2*S_ck*c2*I*(kx_staggered*By_old - ky_staggered*Bx_old)
+                            + X4*Jz - I*(X2*rho_new - T2*X3*rho_old)*kz_staggered;
             } else {
 
                 Complex k_dot_J = kx * Jx + ky * Jy + kz * Jz;
@@ -145,11 +150,14 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 
             // Update B (equation (11a) with X1 rescaled by theta/(epsilon_0*c**2*k**2)):
             // Bx
-            fields(i,j,k,Idx::Bx) = T2*C*Bx_old - T2*S_ck*I*(ky*Ez_old - kz*Ey_old) + X1*I*(ky*Jz - kz*Jy);
+            fields(i,j,k,Idx::Bx) = T2*C*Bx_old - T2*S_ck*I*(ky_staggered*Ez_old - kz_staggered*Ey_old)
+                    + X1*I*(ky_staggered*Jz - kz_staggered*Jy);
             // By
-            fields(i,j,k,Idx::By) = T2*C*By_old - T2*S_ck*I*(kz*Ex_old - kx*Ez_old) + X1*I*(kz*Jx - kx*Jz);
+            fields(i,j,k,Idx::By) = T2*C*By_old - T2*S_ck*I*(kz_staggered*Ex_old - kx_staggered*Ez_old)
+                    + X1*I*(kz_staggered*Jx - kx_staggered*Jz);
             // Bz
-            fields(i,j,k,Idx::Bz) = T2*C*Bz_old - T2*S_ck*I*(kx*Ey_old - ky*Ex_old) + X1*I*(kx*Jy - ky*Jx);
+            fields(i,j,k,Idx::Bz) = T2*C*Bz_old - T2*S_ck*I*(kx_staggered*Ey_old - ky_staggered*Ex_old)
+                    + X1*I*(kx_staggered*Jy - ky_staggered*Jx);
         });
     }
 }
@@ -169,10 +177,12 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
 
         // Extract pointers for the k vectors
         const Real* modified_kx = modified_kx_vec[mfi].dataPtr();
+        const Real* modified_kx_staggered = modified_kx_vec_staggered[mfi].dataPtr();
 #if (AMREX_SPACEDIM==3)
         const Real* modified_ky = modified_ky_vec[mfi].dataPtr();
 #endif
         const Real* modified_kz = modified_kz_vec[mfi].dataPtr();
+        const Real* modified_kz_staggered = modified_kz_vec_staggered[mfi].dataPtr();
 
         // Extract arrays for the coefficients
         Array4<Real> C = C_coef[mfi].array();
@@ -202,6 +212,10 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
 #else
                 std::pow(modified_kz[j], 2));
 #endif
+            // Calculate norm of vector
+            const Real k_norm_staggered = std::sqrt(std::pow(modified_kx_staggered[i], 2)
+                                                  + std::pow(modified_kz_staggered[j], 2));
+
             // Physical constants c, c**2, and epsilon_0, and imaginary unit
             constexpr Real c    = PhysConst::c;
             constexpr Real c2   = c*c;
@@ -224,18 +238,22 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
             // (12a)-(12d) of (Lehe et al, PRE 94, 2016), used to update B and E
             // (equations (11a) and (11b) of the same reference, respectively)
 
-            if (k_norm != 0.) {
+            if (k_norm != 0. && k_norm_staggered != 0.) {
 
                 // Auxiliary coefficients
                 const Real    k2   = k_norm * k_norm;
+                const Real    k2_s = k_norm_staggered * k_norm_staggered;
+                const Real    ks_kc = k_norm_staggered / k_norm;
                 const Real    ck   = c * k_norm;
+                const Real    ck_s = c * k_norm_staggered;
                 const Real    ckdt = ck * dt;
-                const Complex tmp1 = amrex::exp(  I * ckdt); // limit of T2 for nu =  1
-                const Complex tmp2 = amrex::exp(- I * ckdt); // limit of T2 for nu = -1
+                const Real    ckdt_s = ck_s * dt;
+                const Complex tmp1 = amrex::exp(  I * ckdt_s); // limit of T2 for nu =  1
+                const Complex tmp2 = amrex::exp(- I * ckdt_s); // limit of T2 for nu = -1
 
                 // See equation (12a)
-                C   (i,j,k) = std::cos(ckdt);
-                S_ck(i,j,k) = std::sin(ckdt) / ck;
+                C   (i,j,k) = std::cos(ckdt_s);
+                S_ck(i,j,k) = std::sin(ckdt_s) / ck_s;
 
                 // See equation (12b)
                 const Real    nu         = kv / ck;
@@ -245,10 +263,10 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                 // This is exp(i*(k \dot v_gal)*dt)
                 T2(i,j,k) = theta * theta;
 
-                if ( (nu != 1.) && (nu != 0.) ) {
+                if ( (nu != ks_kc) && (nu != -ks_kc) && (nu != 0.) ) {
 
                     // x1 is the coefficient chi_1 in equation (12c)
-                    Complex x1 = 1._rt / (1._rt - nu*nu)
+                    Complex x1 = ck*ck / (ck_s*ck_s - nu*nu*ck*ck)
                         * (theta_star - C(i,j,k) * theta + I * kv * S_ck(i,j,k) * theta);
 
                     // X1 multiplies i*(k \times J) in the update equation for B
@@ -257,8 +275,8 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                     if (update_with_rho) {
                         // X2 multiplies rho_new in the update equation for E
                         // X3 multiplies rho_old in the update equation for E
-                        X2(i,j,k) = (x1 - theta * (1._rt - C(i,j,k))) / (theta_star - theta) / (ep0 * k2);
-                        X3(i,j,k) = (x1 - theta_star * (1._rt - C(i,j,k))) / (theta_star - theta) / (ep0 * k2);
+                        X2(i,j,k) = (x1*ck_s*ck_s - theta * (1._rt - C(i,j,k))*ck*ck) / (theta_star - theta) / (ep0 * c2 * k2 * k2_s);
+                        X3(i,j,k) = (x1*ck_s*ck_s - theta_star * (1._rt - C(i,j,k))*ck*ck) / (theta_star - theta) / (ep0 * c2 * k2 * k2_s);
                     } else {
                         // X2_old is the coefficient chi_2 in equation (12d)
                         // X3_old is the coefficient chi_3 in equation (12d)
@@ -278,13 +296,13 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                 if (nu == 0.) {
 
                     // X1 multiplies i*(k \times J) in the update equation for B
-                    X1(i,j,k) = (1._rt - C(i,j,k)) / (ep0 * c2 * k2);
+                    X1(i,j,k) = (1._rt - C(i,j,k)) / (ep0 * c2 * k2_s);
 
                     if (update_with_rho) {
                         // X2 multiplies rho_new in the update equation for E
                         // X3 multiplies rho_old in the update equation for E
-                        X2(i,j,k) = (1._rt - S_ck(i,j,k) / dt) / (ep0 * k2);
-                        X3(i,j,k) = (C(i,j,k) - S_ck(i,j,k) / dt) / (ep0 * k2);
+                        X2(i,j,k) = (1._rt - S_ck(i,j,k) / dt) / (ep0 * k2_s);
+                        X3(i,j,k) = (C(i,j,k) - S_ck(i,j,k) / dt) / (ep0 * k2_s);
                     } else {
                         // X2 multiplies (k \dot E) in the update equation for E
                         // X3 multiplies (k \dot J) in the update equation for E
@@ -297,18 +315,18 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                 }
 
                 // Limits for nu = 1
-                if (nu == 1.) {
+                if (nu == ks_kc) {
 
                     // X1 multiplies i*(k \times J) in the update equation for B
-                    X1(i,j,k) = (1._rt - tmp1 * tmp1 + 2._rt * I * ckdt) / (4._rt * ep0 * c2 * k2);
+                    X1(i,j,k) = (1._rt - tmp1 * tmp1 + 2._rt * I * ckdt_s) / (4._rt * ep0 * c2 * k2_s);
 
                     if (update_with_rho) {
                         // X2 multiplies rho_new in the update equation for E
                         // X3 multiplies rho_old in the update equation for E
-                        X2(i,j,k) = (- 3._rt + 4._rt * tmp1 - tmp1 * tmp1 - 2._rt * I * ckdt)
-                            / (4._rt * ep0 * k2 * (tmp1 - 1._rt));
-                        X3(i,j,k) = (3._rt - 2._rt / tmp1 - 2._rt * tmp1 + tmp1 * tmp1 - 2._rt * I * ckdt)
-                            / (4._rt * ep0 * k2 * (tmp1 - 1._rt));
+                        X2(i,j,k) = (- 3._rt + 4._rt * tmp1 - tmp1 * tmp1 - 2._rt * I * ckdt_s)
+                            / (4._rt * ep0 * k2_s * (tmp1 - 1._rt));
+                        X3(i,j,k) = (3._rt - 2._rt / tmp1 - 2._rt * tmp1 + tmp1 * tmp1 - 2._rt * I * ckdt_s)
+                            / (4._rt * ep0 * k2_s * (tmp1 - 1._rt));
                     } else {
                         // X2 multiplies (k \dot E) in the update equation for E
                         // X3 multiplies (k \dot J) in the update equation for E
@@ -318,22 +336,22 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                     }
 
                     // Coefficient multiplying J in update equation for E
-                    X4(i,j,k) = (- I + I * tmp1 * tmp1 - 2._rt * ckdt) / (4._rt * ep0 * ck);
+                    X4(i,j,k) = (- I + I * tmp1 * tmp1 - 2._rt * ckdt_s) / (4._rt * ep0 * ck_s);
                 }
 
                 // Limits for nu = -1
-                if (nu == -1.) {
+                if (nu == -ks_kc) {
 
                     // X1 multiplies i*(k \times J) in the update equation for B
-                    X1(i,j,k) = (1._rt - tmp2 * tmp2 - 2._rt * I * ckdt) / (4._rt * ep0 * c2 * k2);
+                    X1(i,j,k) = (1._rt - tmp2 * tmp2 - 2._rt * I * ckdt_s) / (4._rt * ep0 * c2 * k2_s);
 
                     if (update_with_rho) {
                         // X2 multiplies rho_new in the update equation for E
                         // X3 multiplies rho_old in the update equation for E
-                        X2(i,j,k) = (- 4._rt + 3._rt * tmp1 + tmp2 - 2._rt * I * ckdt * tmp1)
-                            / (4._rt * ep0 * k2 * (tmp1 - 1._rt));
-                        X3(i,j,k) = (2._rt - tmp2 - 3._rt * tmp1 + 2._rt * tmp1 * tmp1 - 2._rt * I * ckdt * tmp1)
-                            / (4._rt * ep0 * k2 * (tmp1 - 1._rt));
+                        X2(i,j,k) = (- 4._rt + 3._rt * tmp1 + tmp2 - 2._rt * I * ckdt_s * tmp1)
+                            / (4._rt * ep0 * k2_s * (tmp1 - 1._rt));
+                        X3(i,j,k) = (2._rt - tmp2 - 3._rt * tmp1 + 2._rt * tmp1 * tmp1 - 2._rt * I * ckdt_s * tmp1)
+                            / (4._rt * ep0 * k2_s * (tmp1 - 1._rt));
                     } else {
                         // X2 multiplies (k \dot E) in the update equation for E
                         // X3 multiplies (k \dot J) in the update equation for E
@@ -343,12 +361,48 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                     }
 
                     // Coefficient multiplying J in update equation for E
-                    X4(i,j,k) = (I - I * tmp2 * tmp2 - 2._rt * ckdt) / (4._rt * ep0 * ck);
+                    X4(i,j,k) = (I - I * tmp2 * tmp2 - 2._rt * ckdt_s) / (4._rt * ep0 * ck_s);
                 }
             }
 
-            // Limits for k = 0
-            else {
+            // Limits for kc = 0 only
+            else if (k_norm == 0. && k_norm_staggered != 0.) {
+                const Real k2_s = k_norm_staggered * k_norm_staggered;
+                const Real ck_s = c * k_norm_staggered;
+                const Real ckdt_s = ck_s * dt;
+                C   (i,j,k) = std::cos(ckdt_s);
+                S_ck(i,j,k) = std::sin(ckdt_s) / ck_s;
+                T2(i,j,k) = 1._rt;
+                X1(i,j,k) = (1._rt - C(i,j,k)) / (ep0 * c2 * k2_s);
+                if (update_with_rho) {
+                    X2(i,j,k) = (1._rt - S_ck(i,j,k) / dt) / (ep0 * k2_s);
+                    X3(i,j,k) = (C(i,j,k) - S_ck(i,j,k) / dt) / (ep0 * k2_s);
+                }
+                X4(i,j,k) = - S_ck(i,j,k) / ep0;
+            }
+
+            // Limits for ks = 0 only
+            else if (k_norm != 0. && k_norm_staggered == 0.) {
+                const Real k2   = k_norm * k_norm;
+                const Real ck   = c * k_norm;
+                const Real ckdt = ck * dt;
+                const Real nu   = kv / ck;
+                const Complex theta = amrex::exp(  I * 0.5_rt * kv * dt);
+                C(i,j,k) = 1._rt;
+                S_ck(i,j,k) = dt;
+                T2(i,j,k) = theta * theta;
+                X1(i,j,k) = (-1._rt + T2(i,j,k) - I * ckdt * nu * T2(i,j,k)) / (ep0 * ck*ck * nu*nu);
+                if (update_with_rho) {
+                    X2(i,j,k) = (1._rt - T2(i,j,k) + I * ckdt * nu * T2(i,j,k) + 0.5_rt * ckdt*ckdt * nu*nu * T2(i,j,k))
+                        / (ep0 * k2 * nu*nu * (T2(i,j,k) - 1._rt));
+                    X3(i,j,k) = (1._rt - T2(i,j,k) + I * ckdt * nu * T2(i,j,k) + 0.5_rt * ckdt*ckdt * nu*nu)
+                        / (ep0 * k2 * nu*nu * (T2(i,j,k) - 1._rt));
+                }
+                X4(i,j,k) = I * (T2(i,j,k) - 1._rt) / (ep0 * ck * nu);
+            }
+
+            // Limits for kc = 0 and ks = 0
+            else if (k_norm == 0. && k_norm_staggered == 0.) {
 
                 // Limits of cos(c*k*dt) and sin(c*k*dt)/(c*k)
                 C(i,j,k) = 1._rt;

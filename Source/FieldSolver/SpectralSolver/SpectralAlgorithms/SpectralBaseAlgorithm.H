@@ -78,12 +78,14 @@ class SpectralBaseAlgorithm
                               const int norder_x, const int norder_y,
                               const int norder_z, const bool nodal)
           // Compute and assign the modified k vectors
-          : modified_kx_vec(spectral_kspace.getModifiedKComponent(dm,0,norder_x,nodal)),
+          : modified_kx_vec(spectral_kspace.getModifiedKComponent(dm,0,norder_x,true)),
+            modified_kx_vec_staggered(spectral_kspace.getModifiedKComponent(dm,0,norder_x,false)),
 #if (AMREX_SPACEDIM==3)
             modified_ky_vec(spectral_kspace.getModifiedKComponent(dm,1,norder_y,nodal)),
             modified_kz_vec(spectral_kspace.getModifiedKComponent(dm,2,norder_z,nodal))
 #else
-            modified_kz_vec(spectral_kspace.getModifiedKComponent(dm,1,norder_z,nodal))
+            modified_kz_vec(spectral_kspace.getModifiedKComponent(dm,1,norder_z,true)),
+            modified_kz_vec_staggered(spectral_kspace.getModifiedKComponent(dm,1,norder_z,false))
 #endif
           {
 #if (AMREX_SPACEDIM!=3)
@@ -93,10 +95,12 @@ class SpectralBaseAlgorithm
 
         // Modified finite-order vectors
         KVectorComponent modified_kx_vec;
+        KVectorComponent modified_kx_vec_staggered;
 #if (AMREX_SPACEDIM==3)
         KVectorComponent modified_ky_vec;
 #endif
         KVectorComponent modified_kz_vec;
+        KVectorComponent modified_kz_vec_staggered;
 };
 
 #endif // WARPX_USE_PSATD
