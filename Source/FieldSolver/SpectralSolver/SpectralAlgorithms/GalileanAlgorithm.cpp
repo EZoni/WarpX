@@ -8,7 +8,6 @@
 
 using namespace amrex;
 
-/* \brief Initialize coefficients for the update equation */
 GalileanAlgorithm::GalileanAlgorithm(const SpectralKSpace& spectral_kspace,
                          const DistributionMapping& dm,
                          const int norder_x, const int norder_y,
@@ -66,7 +65,6 @@ GalileanAlgorithm::GalileanAlgorithm(const SpectralKSpace& spectral_kspace,
     InitializeSpectralCoefficients(spectral_kspace, dm, dt);
 }
 
-/* Advance the E and B field in spectral space (stored in `f`) over one time step */
 void
 GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 {
