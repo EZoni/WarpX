@@ -16,11 +16,16 @@ class GalileanAlgorithm : public SpectralBaseAlgorithm
                            const int norder_z, const bool nodal,
                            const amrex::Array<amrex::Real,3>& v_galilean,
                            const amrex::Real dt,
-                           const bool update_with_rho);
+                           const bool update_with_rho,
+                           const bool time_averaging);
         // Redefine update equation from base class
         virtual void pushSpectralFields (SpectralFieldData& f) const override final;
         virtual int getRequiredNumberOfFields () const override final {
-            return SpectralFieldIndex::n_fields;
+            if (m_time_averaging) {
+                return SpectralAvgFieldIndex::n_fields;
+            } else {
+                return SpectralFieldIndex::n_fields;
+            }
         };
         void InitializeSpectralCoefficients (const SpectralKSpace& spectral_kspace,
                                              const amrex::DistributionMapping& dm,
@@ -58,16 +63,24 @@ class GalileanAlgorithm : public SpectralBaseAlgorithm
 
     private:
         SpectralRealCoefficients C_coef, S_ck_coef;
-        SpectralComplexCoefficients Theta2_coef, X1_coef, X2_coef, X3_coef, X4_coef;
+        SpectralComplexCoefficients T2_coef, X1_coef, X2_coef, X3_coef, X4_coef;
+
+        // Always declared, used only with averaged algorithm
+        SpectralRealCoefficients C1_coef, C3_coef, S1_coef,S3_coef;
+        SpectralComplexCoefficients Psi1_coef, Psi2_coef, Psi3_coef, Psi4_coef, A1_coef, A2_coef, Rhoold_coef, Rhonew_coef, Jcoef_coef;
+
         // Centered modified finite-order k vectors
         KVectorComponent modified_kx_vec_centered;
 #if (AMREX_SPACEDIM==3)
         KVectorComponent modified_ky_vec_centered;
 #endif
         KVectorComponent modified_kz_vec_centered;
+
+        // Other member variables
         amrex::Array<amrex::Real,3> m_v_galilean;
         amrex::Real m_dt;
         bool m_update_with_rho;
+        bool m_time_averaging;
 };
 #endif // WARPX_USE_PSATD
 #endif // WARPX_GALILEAN_ALGORITHM_H_

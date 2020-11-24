@@ -15,7 +15,8 @@ GalileanAlgorithm::GalileanAlgorithm(const SpectralKSpace& spectral_kspace,
                          const int norder_z, const bool nodal,
                          const Array<Real, 3>& v_galilean,
                          const Real dt,
-                         const bool update_with_rho)
+                         const bool update_with_rho,
+                         const bool time_averaging)
      // Initialize members of base class
      : SpectralBaseAlgorithm(spectral_kspace, dm, norder_x, norder_y, norder_z, nodal),
        // Initialize the centered finite-order modified k vectors: these are computed
@@ -30,7 +31,8 @@ GalileanAlgorithm::GalileanAlgorithm(const SpectralKSpace& spectral_kspace,
 #endif
        m_v_galilean(v_galilean),
        m_dt(dt),
-       m_update_with_rho(update_with_rho)
+       m_update_with_rho(update_with_rho),
+       m_time_averaging(time_averaging)
 {
     const BoxArray& ba = spectral_kspace.spectralspace_ba;
 
@@ -41,7 +43,25 @@ GalileanAlgorithm::GalileanAlgorithm(const SpectralKSpace& spectral_kspace,
     X2_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
     X3_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
     X4_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
-    Theta2_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+    T2_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+
+    if (time_averaging) {
+        C1_coef = SpectralRealCoefficients(ba, dm, 1, 0);
+        S1_coef = SpectralRealCoefficients(ba, dm, 1, 0);
+        C3_coef = SpectralRealCoefficients(ba, dm, 1, 0);
+        S3_coef = SpectralRealCoefficients(ba, dm, 1, 0);
+
+        Psi1_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+        Psi2_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+        Psi3_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+
+        A1_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+        A2_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+
+        Rhoold_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+        Rhonew_coef = SpectralComplexCoefficients(ba, dm, 1, 0);
+        Jcoef_coef  = SpectralComplexCoefficients(ba, dm, 1, 0);
+    }
 
     InitializeSpectralCoefficients(spectral_kspace, dm, dt);
 }
@@ -51,6 +71,7 @@ void
 GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 {
     const bool update_with_rho = m_update_with_rho;
+    const bool time_averaging  = m_time_averaging;
 
     // Loop over boxes
     for (MFIter mfi(f.fields); mfi.isValid(); ++mfi){
@@ -67,7 +88,23 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
         Array4<const Complex> X2_arr = X2_coef[mfi].array();
         Array4<const Complex> X3_arr = X3_coef[mfi].array();
         Array4<const Complex> X4_arr = X4_coef[mfi].array();
-        Array4<const Complex> Theta2_arr = Theta2_coef[mfi].array();
+        Array4<const Complex> T2_arr = T2_coef[mfi].array();
+
+        Array4<const Complex> Psi1_arr;
+        Array4<const Complex> Psi2_arr;
+        Array4<const Complex> A1_arr;
+        Array4<const Complex> Rhonew_arr;
+        Array4<const Complex> Rhoold_arr;
+        Array4<const Complex> Jcoef_arr;
+
+        if (time_averaging) {
+            Psi1_arr = Psi1_coef[mfi].array();
+            Psi2_arr = Psi2_coef[mfi].array();
+            A1_arr = A1_coef[mfi].array();
+            Rhonew_arr = Rhonew_coef[mfi].array();
+            Rhoold_arr = Rhoold_coef[mfi].array();
+            Jcoef_arr =Jcoef_coef[mfi].array();
+        }
 
         // Extract pointers for the k vectors
         const Real* modified_kx_arr = modified_kx_vec[mfi].dataPtr();
@@ -79,8 +116,10 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
         // Loop over indices within one box
         ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
         {
-            // Record old values of the fields to be updated
             using Idx = SpectralFieldIndex;
+            using AvgIdx = SpectralAvgFieldIndex;
+
+            // Record old values of the fields to be updated
             const Complex Ex_old = fields(i,j,k,Idx::Ex);
             const Complex Ey_old = fields(i,j,k,Idx::Ey);
             const Complex Ez_old = fields(i,j,k,Idx::Ez);
@@ -106,6 +145,7 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
 #endif
             // Physical constant c**2 and imaginary unit
             constexpr Real c2   = PhysConst::c*PhysConst::c;
+            constexpr Real inv_ep0 = 1._rt/PhysConst::ep0;
             constexpr Complex I = Complex{0._rt,1._rt};
 
             // The definition of these coefficients is explained in more detail
@@ -116,7 +156,7 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
             const Complex X2 = X2_arr(i,j,k);
             const Complex X3 = X3_arr(i,j,k);
             const Complex X4 = X4_arr(i,j,k);
-            const Complex T2 = Theta2_arr(i,j,k);
+            const Complex T2 = T2_arr(i,j,k);
 
             // The equations in the following are the update equations for B and E,
             // equations (11a) and (11b) of (Lehe et al, PRE 94, 2016), respectively,
@@ -160,6 +200,37 @@ GalileanAlgorithm::pushSpectralFields (SpectralFieldData& f) const
             fields(i,j,k,Idx::By) = T2*C*By_old - T2*S_ck*I*(kz*Ex_old - kx*Ez_old) + X1*I*(kz*Jx - kx*Jz);
             // Bz
             fields(i,j,k,Idx::Bz) = T2*C*Bz_old - T2*S_ck*I*(kx*Ey_old - ky*Ex_old) + X1*I*(kx*Jy - ky*Jx);
+
+            if (time_averaging) {
+
+                const Complex Psi1 = Psi1_arr(i,j,k);
+                const Complex Psi2 = Psi2_arr(i,j,k);
+                const Complex A1 = A1_arr(i,j,k);
+                const Complex CRhoold= Rhoold_arr(i,j,k);
+                const Complex CRhonew= Rhonew_arr(i,j,k);
+                const Complex Jcoef = Jcoef_arr(i,j,k);
+
+                //Update the averaged E,B fields in time on the interval [(n-1/2)dx, (n+1/2)dx]
+                fields(i,j,k,AvgIdx::Ex_avg) = Psi1*Ex_old
+                              - Psi2*c2*I*(ky*Bz_old - kz*By_old)
+                              + Jcoef*Jx + ( CRhonew * rho_new +  CRhoold*rho_old )*kx;
+                fields(i,j,k,AvgIdx::Ey_avg) =  Psi1*Ey_old
+                              - Psi2*c2*I*(kz*Bx_old - kx*Bz_old)
+                              + Jcoef*Jy +( CRhonew * rho_new +  CRhoold*rho_old )*ky;
+                fields(i,j,k,AvgIdx::Ez_avg) =  Psi1*Ez_old
+                              - Psi2*c2*I*(kx*By_old - ky*Bx_old)
+                              + Jcoef*Jz     + ( CRhonew * rho_new +  CRhoold*rho_old )*kz;
+
+                fields(i,j,k,AvgIdx::Bx_avg) =  Psi1*Bx_old
+                              + I*Psi2*(ky*Ez_old - kz*Ey_old)
+                              + A1*I*(ky*Jz     - kz*Jy)*inv_ep0;
+                fields(i,j,k,AvgIdx::By_avg) =  Psi1*By_old
+                              + I*Psi2*(kz*Ex_old - kx*Ez_old)
+                              + A1*I*(kz*Jx     - kx*Jz)*inv_ep0;
+                fields(i,j,k,AvgIdx::Bz_avg) =  Psi1*Bz_old
+                              + I*Psi2*(kx*Ey_old - ky*Ex_old)
+                              + A1*I*(kx*Jy     - ky*Jx)*inv_ep0;
+            }
         });
     }
 }
@@ -169,6 +240,7 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                                                         const amrex::Real dt)
 {
     const bool update_with_rho = m_update_with_rho;
+    const bool time_averaging  = m_time_averaging;
 
     const BoxArray& ba = spectral_kspace.spectralspace_ba;
 
@@ -194,7 +266,35 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
         Array4<Complex> X2 = X2_coef[mfi].array();
         Array4<Complex> X3 = X3_coef[mfi].array();
         Array4<Complex> X4 = X4_coef[mfi].array();
-        Array4<Complex> T2 = Theta2_coef[mfi].array();
+        Array4<Complex> T2 = T2_coef[mfi].array();
+
+        Array4<Real> C1;
+        Array4<Real> S1;
+        Array4<Real> C3;
+        Array4<Real> S3;
+        Array4<Complex> Psi1;
+        Array4<Complex> Psi2;
+        Array4<Complex> Psi3;
+        Array4<Complex> A1;
+        Array4<Complex> A2;
+        Array4<Complex> CRhoold;
+        Array4<Complex> CRhonew;
+        Array4<Complex> Jcoef;
+
+        if (time_averaging) {
+            C1 = C1_coef[mfi].array();
+            S1 = S1_coef[mfi].array();
+            C3 = C3_coef[mfi].array();
+            S3 = S3_coef[mfi].array();
+            Psi1 = Psi1_coef[mfi].array();
+            Psi2 = Psi2_coef[mfi].array();
+            Psi3 = Psi3_coef[mfi].array();
+            A1 = A1_coef[mfi].array();
+            A2 = A2_coef[mfi].array();
+            CRhoold = Rhoold_coef[mfi].array();
+            CRhonew = Rhonew_coef[mfi].array();
+            Jcoef   = Jcoef_coef[mfi].array();
+        }
 
         // Extract Galilean velocity
         Real vx = m_v_galilean[0];
@@ -264,6 +364,13 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
                 C   (i,j,k) = std::cos(om * dt);
                 S_ck(i,j,k) = std::sin(om * dt) / om;
 
+                if (time_averaging) {
+                    C1(i,j,k) = std::cos(0.5_rt*om*dt);
+                    S1(i,j,k) = std::sin(0.5_rt*om*dt);
+                    C3(i,j,k) = std::cos(1.5_rt*om*dt);
+                    S3(i,j,k) = std::sin(1.5_rt*om*dt);
+                }
+
                 // See equation (12b)
                 const Real    nu = kv / om_c;
                 const Complex theta      = amrex::exp(  I * nu * om_c * dt * 0.5_rt);
@@ -305,6 +412,23 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
 
                     // X4 multiplies J in the update equation for E
                     X4(i,j,k) = I * nu * om_c * X1(i,j,k) - T2(i,j,k) * S_ck(i,j,k) / ep0;
+
+                    if (time_averaging) {
+                        Complex C_rho = I* c2 /( (1._rt-theta*theta) * ep0);
+
+                        Psi1(i,j,k) = theta * ((S1(i,j,k) + I*nu*C1(i,j,k))
+                                      - T2(i,j,k) * (S3(i,j,k) + I*nu*C3(i,j,k))) /(om*dt * (nu*nu - 1._rt));
+                        Psi2(i,j,k) = theta * ((C1(i,j,k) - I*nu*S1(i,j,k))
+                                      - T2(i,j,k) * (C3(i,j,k) - I*nu*S3(i,j,k))) /(om2*dt * (nu*nu - 1._rt));
+                        Psi3(i,j,k) = I * theta * (1._rt - theta*theta) /(om*dt*nu);
+
+                        A1(i,j,k) = (Psi1(i,j,k)  - 1._rt + I * kv*Psi2(i,j,k)    )/ (om2* (nu*nu - 1._rt));
+                        A2(i,j,k) = (Psi3(i,j,k) - Psi1(i,j,k)) / om2;
+
+                        CRhoold(i,j,k) = C_rho * (theta*theta * A1(i,j,k) - A2(i,j,k));
+                        CRhonew(i,j,k) = C_rho * (A2(i,j,k) - A1(i,j,k));
+                        Jcoef(i,j,k) = (I*kv*A1(i,j,k) + Psi2(i,j,k))/ep0;
+                    }
                 }
 
                 // Limits for nu = 0
@@ -327,6 +451,19 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
 
                     // Coefficient multiplying J in update equation for E
                     X4(i,j,k) = - S_ck(i,j,k) / ep0;
+
+                    if (time_averaging) {
+                        Psi1(i,j,k) = (-S1(i,j,k) + S3(i,j,k)) / (om*dt);
+                        Psi2(i,j,k) = (-C1(i,j,k) + C3(i,j,k)) / (om2*dt);
+                        Psi3(i,j,k) = 1._rt;
+                        A1(i,j,k) = (om*dt + S1(i,j,k) - S3(i,j,k)) / (om3 * dt);
+                        A2(i,j,k) =  (om*dt + S1(i,j,k) - S3(i,j,k)) / (om3 * dt);
+                        CRhoold(i,j,k) = c2 * 2._rt * I * S1(i,j,k)  * ( dt*C(i,j,k) - S_ck(i,j,k))
+                                        / (om3*dt*dt*ep0);
+                        CRhonew(i,j,k) =  - I * c2 * (om2 * dt*dt - C1(i,j,k) + C3(i,j,k))
+                                        / (om2 * om2 * ep0 * dt*dt);
+                        Jcoef(i,j,k) = (-C1(i,j,k) + C3(i,j,k)) / (ep0*om2*dt);
+                    }
                 }
 
                 // Limits for nu = omega/omega_c
@@ -476,6 +613,17 @@ void GalileanAlgorithm::InitializeSpectralCoefficients (const SpectralKSpace& sp
 
                 // Limit of exp(I*(k \dot v_gal)*dt)
                 T2(i,j,k) = 1._rt;
+
+                if (time_averaging) {
+                    Psi1(i,j,k) = 1._rt;
+                    Psi2(i,j,k) = -dt;
+                    Psi3(i,j,k) = 1._rt;
+                    A1(i,j,k) = 13._rt * dt*dt /24._rt;
+                    A2(i,j,k) = 13._rt * dt*dt /24._rt;
+                    CRhoold(i,j,k) = -I*c2 * dt*dt / (3._rt * ep0);
+                    CRhonew(i,j,k) = -5._rt*I*c2 * dt*dt / (24._rt * ep0);
+                    Jcoef(i,j,k) = -dt/ep0;
+                }
             }
         });
     }
@@ -583,10 +731,79 @@ GalileanAlgorithm::CurrentCorrection (SpectralFieldData& field_data,
 }
 
 void
-GalileanAlgorithm::VayDeposition (SpectralFieldData& /*field_data*/,
-                                  std::array<std::unique_ptr<amrex::MultiFab>,3>& /*current*/)
+GalileanAlgorithm::VayDeposition (SpectralFieldData& field_data,
+                                  std::array<std::unique_ptr<amrex::MultiFab>,3>& current)
 {
-    amrex::Abort("Vay deposition not implemented for Galilean PSATD");
+    // Profiling
+    BL_PROFILE("PsatdAlgorithm::VayDeposition()");
+
+    using Idx = SpectralFieldIndex;
+
+    // Forward Fourier transform of D (temporarily stored in current):
+    // D is nodal and does not match the staggering of J, therefore we pass the
+    // actual staggering of D (IntVect(1)) to the ForwardTransform function
+    field_data.ForwardTransform(*current[0], Idx::Jx, 0, IntVect(1));
+    field_data.ForwardTransform(*current[1], Idx::Jy, 0, IntVect(1));
+    field_data.ForwardTransform(*current[2], Idx::Jz, 0, IntVect(1));
+
+    // Loop over boxes
+    for (amrex::MFIter mfi(field_data.fields); mfi.isValid(); ++mfi) {
+
+        const amrex::Box& bx = field_data.fields[mfi].box();
+
+        // Extract arrays for the fields to be updated
+        amrex::Array4<Complex> fields = field_data.fields[mfi].array();
+
+        // Extract pointers for the modified k vectors
+        const amrex::Real* const modified_kx_arr = modified_kx_vec[mfi].dataPtr();
+#if (AMREX_SPACEDIM==3)
+        const amrex::Real* const modified_ky_arr = modified_ky_vec[mfi].dataPtr();
+#endif
+        const amrex::Real* const modified_kz_arr = modified_kz_vec[mfi].dataPtr();
+
+        // Loop over indices within one box
+        ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
+        {
+            // Shortcuts for the values of D
+            const Complex Dx = fields(i,j,k,Idx::Jx);
+#if (AMREX_SPACEDIM==3)
+            const Complex Dy = fields(i,j,k,Idx::Jy);
+#endif
+            const Complex Dz = fields(i,j,k,Idx::Jz);
+
+            // Imaginary unit
+            constexpr Complex I = Complex{0._rt, 1._rt};
+
+            // Modified k vector values
+            const amrex::Real kx_mod = modified_kx_arr[i];
+#if (AMREX_SPACEDIM==3)
+            const amrex::Real ky_mod = modified_ky_arr[j];
+            const amrex::Real kz_mod = modified_kz_arr[k];
+#else
+            const amrex::Real kz_mod = modified_kz_arr[j];
+#endif
+
+            // Compute Jx
+            if (kx_mod != 0._rt) fields(i,j,k,Idx::Jx) = I * Dx / kx_mod;
+            else                 fields(i,j,k,Idx::Jx) = 0._rt;
+
+#if (AMREX_SPACEDIM==3)
+            // Compute Jy
+            if (ky_mod != 0._rt) fields(i,j,k,Idx::Jy) = I * Dy / ky_mod;
+            else                 fields(i,j,k,Idx::Jy) = 0._rt;
+#endif
+
+            // Compute Jz
+            if (kz_mod != 0._rt) fields(i,j,k,Idx::Jz) = I * Dz / kz_mod;
+            else                 fields(i,j,k,Idx::Jz) = 0._rt;
+
+        });
+    }
+
+    // Backward Fourier transform of J
+    field_data.BackwardTransform(*current[0], Idx::Jx, 0);
+    field_data.BackwardTransform(*current[1], Idx::Jy, 0);
+    field_data.BackwardTransform(*current[2], Idx::Jz, 0);
 }
 
 #endif // WARPX_USE_PSATD
