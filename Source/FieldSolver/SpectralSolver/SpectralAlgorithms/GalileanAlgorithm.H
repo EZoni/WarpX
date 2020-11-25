@@ -77,11 +77,11 @@ class GalileanAlgorithm : public SpectralBaseAlgorithm
 
     private:
 
-        // Real and complex coefficients always allocated and used
+        // These real and complex coefficients are always allocated
         SpectralRealCoefficients C_coef, S_ck_coef;
         SpectralComplexCoefficients T2_coef, X1_coef, X2_coef, X3_coef, X4_coef;
 
-        // Real and complex coefficients allocated and used only with averaged Galilean PSATD
+        // These real and complex coefficients are allocated only with averaged Galilean PSATD
         SpectralRealCoefficients C1_coef, C3_coef, S1_coef, S3_coef;
         SpectralComplexCoefficients Psi1_coef, Psi2_coef, Psi3_coef, Psi4_coef,
                                     A1_coef, A2_coef, Rhoold_coef, Rhonew_coef, Jcoef_coef;
