@@ -166,6 +166,8 @@ public:
 private:
     bool m_ok;
 
+    bool m_divE_cleaning;
+
     const amrex::Geometry* m_geom;
     const amrex::Geometry* m_cgeom;
 
@@ -198,9 +200,10 @@ private:
 };
 
 #ifdef WARPX_USE_PSATD
-void PushPMLPSATDSinglePatch( SpectralSolver& solver,
+void PushPMLPSATDSinglePatch(SpectralSolver& solver,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_E,
-    std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B );
+    std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B,
+    const bool divE_cleaning);
 #endif
 
 #endif

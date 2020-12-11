@@ -432,7 +432,8 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
           int do_dive_cleaning, int do_moving_window,
           int /*pml_has_particles*/, int do_pml_in_domain,
           const amrex::IntVect do_pml_Lo, const amrex::IntVect do_pml_Hi)
-    : m_geom(geom),
+    : m_divE_cleaning(do_dive_cleaning),
+      m_geom(geom),
       m_cgeom(cgeom)
 {
 
@@ -497,19 +498,21 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
         ngf = ngFFT;
     }
 
-    pml_E_fp[0] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getEfield_fp(0,0).ixType().toIntVect() ), dm, 3, nge );
-    pml_E_fp[1] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getEfield_fp(0,1).ixType().toIntVect() ), dm, 3, nge );
-    pml_E_fp[2] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getEfield_fp(0,2).ixType().toIntVect() ), dm, 3, nge );
-    pml_B_fp[0] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getBfield_fp(0,0).ixType().toIntVect() ), dm, 2, ngb );
-    pml_B_fp[1] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getBfield_fp(0,1).ixType().toIntVect() ), dm, 2, ngb );
-    pml_B_fp[2] = std::make_unique<MultiFab>(amrex::convert( ba,
-        WarpX::GetInstance().getBfield_fp(0,2).ixType().toIntVect() ), dm, 2, ngb );
+    // TODO Without div(E) cleaning (F terms), the diagonal components (xx, yy, zz)
+    //      should not be needed (it should be possible to replace 3 with 2 below)
+    pml_E_fp[0] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getEfield_fp(0,0).ixType().toIntVect()), dm, 3, nge);
+    pml_E_fp[1] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getEfield_fp(0,1).ixType().toIntVect()), dm, 3, nge);
+    pml_E_fp[2] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getEfield_fp(0,2).ixType().toIntVect()), dm, 3, nge);
 
+    pml_B_fp[0] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getBfield_fp(0,0).ixType().toIntVect()), dm, 2, ngb);
+    pml_B_fp[1] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getBfield_fp(0,1).ixType().toIntVect()), dm, 2, ngb);
+    pml_B_fp[2] = std::make_unique<MultiFab>(amrex::convert(
+        ba, WarpX::GetInstance().getBfield_fp(0,2).ixType().toIntVect()), dm, 2, ngb);
 
     pml_E_fp[0]->setVal(0.0);
     pml_E_fp[1]->setVal(0.0);
@@ -1090,9 +1093,9 @@ void
 PML::PushPSATD () {
 
     // Update the fields on the fine and coarse patch
-    PushPMLPSATDSinglePatch( *spectral_solver_fp, pml_E_fp, pml_B_fp );
+    PushPMLPSATDSinglePatch(*spectral_solver_fp, pml_E_fp, pml_B_fp, m_divE_cleaning);
     if (spectral_solver_cp) {
-        PushPMLPSATDSinglePatch( *spectral_solver_cp, pml_E_cp, pml_B_cp );
+        PushPMLPSATDSinglePatch(*spectral_solver_cp, pml_E_cp, pml_B_cp, m_divE_cleaning);
     }
 }
 
@@ -1100,41 +1103,51 @@ void
 PushPMLPSATDSinglePatch (
     SpectralSolver& solver,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_E,
-    std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B ) {
+    std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B,
+    const bool divE_cleaning) {
 
     using SpIdx = SpectralPMLIndex;
 
     // Perform forward Fourier transform
-    // Note: the correspondance between the spectral PML index
-    // (Exy, Ezx, etc.) and the component (PMLComp::xy, PMComp::zx, etc.)
-    // of the MultiFabs (e.g. pml_E) is dictated by the
-    // function that damps the PML
+    // NOTE The correspondence between the spectral PML index (Exy, Ezx, ...)
+    //      and the component (PMLComp::xy, PMComp::zx, ...) of the MultiFabs
+    //      is dictated by the function that damps the PML
     solver.ForwardTransform(*pml_E[0], SpIdx::Exy, PMLComp::xy);
     solver.ForwardTransform(*pml_E[0], SpIdx::Exz, PMLComp::xz);
-    solver.ForwardTransform(*pml_E[1], SpIdx::Eyz, PMLComp::yz);
     solver.ForwardTransform(*pml_E[1], SpIdx::Eyx, PMLComp::yx);
+    solver.ForwardTransform(*pml_E[1], SpIdx::Eyz, PMLComp::yz);
     solver.ForwardTransform(*pml_E[2], SpIdx::Ezx, PMLComp::zx);
     solver.ForwardTransform(*pml_E[2], SpIdx::Ezy, PMLComp::zy);
     solver.ForwardTransform(*pml_B[0], SpIdx::Bxy, PMLComp::xy);
     solver.ForwardTransform(*pml_B[0], SpIdx::Bxz, PMLComp::xz);
-    solver.ForwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.ForwardTransform(*pml_B[1], SpIdx::Byx, PMLComp::yx);
+    solver.ForwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.ForwardTransform(*pml_B[2], SpIdx::Bzx, PMLComp::zx);
     solver.ForwardTransform(*pml_B[2], SpIdx::Bzy, PMLComp::zy);
+    if (divE_cleaning) {
+        solver.ForwardTransform(*pml_E[0], SpIdx::Exx, PMLComp::xx);
+        solver.ForwardTransform(*pml_E[1], SpIdx::Eyy, PMLComp::yy);
+        solver.ForwardTransform(*pml_E[2], SpIdx::Ezz, PMLComp::zz);
+    }
     // Advance fields in spectral space
     solver.pushSpectralFields();
     // Perform backward Fourier Transform
     solver.BackwardTransform(*pml_E[0], SpIdx::Exy, PMLComp::xy);
     solver.BackwardTransform(*pml_E[0], SpIdx::Exz, PMLComp::xz);
-    solver.BackwardTransform(*pml_E[1], SpIdx::Eyz, PMLComp::yz);
     solver.BackwardTransform(*pml_E[1], SpIdx::Eyx, PMLComp::yx);
+    solver.BackwardTransform(*pml_E[1], SpIdx::Eyz, PMLComp::yz);
     solver.BackwardTransform(*pml_E[2], SpIdx::Ezx, PMLComp::zx);
     solver.BackwardTransform(*pml_E[2], SpIdx::Ezy, PMLComp::zy);
     solver.BackwardTransform(*pml_B[0], SpIdx::Bxy, PMLComp::xy);
     solver.BackwardTransform(*pml_B[0], SpIdx::Bxz, PMLComp::xz);
-    solver.BackwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.BackwardTransform(*pml_B[1], SpIdx::Byx, PMLComp::yx);
+    solver.BackwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.BackwardTransform(*pml_B[2], SpIdx::Bzx, PMLComp::zx);
     solver.BackwardTransform(*pml_B[2], SpIdx::Bzy, PMLComp::zy);
+    if (divE_cleaning) {
+        solver.BackwardTransform(*pml_E[0], SpIdx::Exx, PMLComp::xx);
+        solver.BackwardTransform(*pml_E[1], SpIdx::Eyy, PMLComp::yy);
+        solver.BackwardTransform(*pml_E[2], SpIdx::Ezz, PMLComp::zz);
+    }
 }
 #endif

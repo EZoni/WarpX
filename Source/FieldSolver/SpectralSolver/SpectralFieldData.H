@@ -33,11 +33,12 @@ struct SpectralAvgFieldIndex {
   // n_fields is automatically the total number of fields
 };
 
-/* Index for the PML fields, when stored in spectral space */
+/* Index for the PML fields, when stored in spectral space
+ * (n_fields is automatically the total number of fields) */
 struct SpectralPMLIndex {
-  enum { Exy=0, Exz, Eyx, Eyz, Ezx, Ezy,
-           Bxy, Bxz, Byx, Byz, Bzx, Bzy, n_fields };
-  // n_fields is automatically the total number of fields
+  enum {Exx=0, Exy, Exz, Eyx, Eyy, Eyz, Ezx, Ezy, Ezz,
+        Bxx  , Bxy, Bxz, Byx, Byy, Byz, Bzx, Bzy, Bzz,
+        Fx, Fy, Fz, n_fields};
 };
 
 /** \brief Class that stores the fields in spectral space, and performs the
