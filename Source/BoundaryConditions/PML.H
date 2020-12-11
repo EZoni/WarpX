@@ -103,7 +103,7 @@ public:
          int ncell, int delta, int ref_ratio,
          // PSATD
          amrex::Real dt, int nox_fft, int noy_fft, int noz_fft, bool do_nodal,
-         int do_dive_cleaning, int do_moving_window,
+         int do_divE_cleaning, int do_moving_window,
          int pml_has_particles, int do_pml_in_domain,
          const amrex::IntVect do_pml_Lo = amrex::IntVect::TheUnitVector(),
          const amrex::IntVect do_pml_Hi = amrex::IntVect::TheUnitVector());

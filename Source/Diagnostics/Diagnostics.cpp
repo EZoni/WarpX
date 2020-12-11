@@ -59,8 +59,8 @@ Diagnostics::BaseReadParameters ()
     // Sanity check if user requests to plot F
     if (WarpXUtilStr::is_in(m_varnames, "F")){
         AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
-            warpx.do_dive_cleaning,
-            "plot F only works if warpx.do_dive_cleaning = 1");
+            warpx.do_divE_cleaning,
+            "plot F only works if warpx.do_divE_cleaning = 1");
     }
 
     // If user requests to plot proc_number for a serial run,

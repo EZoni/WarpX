@@ -747,10 +747,10 @@ WarpXOpenPMDPlot::WriteOpenPMDFields( //const std::string& filename,
             return currentSmoothingParameters;
         }() );
   meshes.setAttribute("chargeCorrection", [](){
-      if( WarpX::do_dive_cleaning ) return "hyperbolic"; // TODO or "spectral" or something? double-check
+      if( WarpX::do_divE_cleaning ) return "hyperbolic"; // TODO or "spectral" or something? double-check
       else return "none";
   }() );
-  if( WarpX::do_dive_cleaning )
+  if( WarpX::do_divE_cleaning )
     meshes.setAttribute("chargeCorrectionParameters", "period=1");
 
   // Loop through the different components, i.e. different fields stored in mf

@@ -429,10 +429,10 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
           int ncell, int delta, int ref_ratio,
           // PSATD
           Real dt, int nox_fft, int noy_fft, int noz_fft, bool do_nodal,
-          int do_dive_cleaning, int do_moving_window,
+          int do_divE_cleaning, int do_moving_window,
           int /*pml_has_particles*/, int do_pml_in_domain,
           const amrex::IntVect do_pml_Lo, const amrex::IntVect do_pml_Hi)
-    : m_divE_cleaning(do_dive_cleaning),
+    : m_divE_cleaning(do_divE_cleaning),
       m_geom(geom),
       m_cgeom(cgeom)
 {
@@ -531,7 +531,7 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
     pml_j_fp[1]->setVal(0.0);
     pml_j_fp[2]->setVal(0.0);
 
-    if (do_dive_cleaning)
+    if (do_divE_cleaning)
     {
         pml_F_fp = std::make_unique<MultiFab>(amrex::convert(ba,IntVect::TheUnitVector()), dm, 3, ngf);
         pml_F_fp->setVal(0.0);
@@ -598,7 +598,7 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
         pml_B_cp[1]->setVal(0.0);
         pml_B_cp[2]->setVal(0.0);
 
-        if (do_dive_cleaning)
+        if (do_divE_cleaning)
         {
             pml_F_cp = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheUnitVector()), cdm, 3, ngf);
             pml_F_cp->setVal(0.0);

@@ -1181,7 +1181,7 @@ Numerics and algorithms
 * ``interpolation.field_gathering_nox``, ``interpolation.field_gathering_noy``, ``interpolation.field_gathering_noz`` (default: ``2`` in all directions)
     The order of the interpolation used with staggered grids (``warpx.do_nodal = 0``) and momentum-conserving field gathering (``algo.field_gathering = momentum-conserving``) to interpolate the electric and magnetic fields from the cell centers to the cell nodes, before gathering the fields from the cell nodes to the particle positions. High-order interpolation (order 8 in each direction, at least) is necessary to ensure stability in typical LWFA boosted-frame simulations using the Galilean PSATD or comoving PSATD schemes. This arbitrary-order interpolation is used only when the PSATD solver is used for Maxwell's equations. With the FDTD solver, basic linear interpolation is used instead.
 
-* ``warpx.do_dive_cleaning`` (`0` or `1` ; default: 0)
+* ``warpx.do_divE_cleaning`` (`0` or `1` ; default: 0)
     Whether to use modified Maxwell equations that progressively eliminate
     the error in :math:`div(E)-\rho`. This can be useful when using a current
     deposition algorithm which is not strictly charge-conserving, or when

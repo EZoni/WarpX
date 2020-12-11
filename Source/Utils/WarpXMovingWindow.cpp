@@ -168,8 +168,8 @@ WarpX::MoveWindow (bool move_j)
             }
         }
 
-        // Shift scalar component F for dive cleaning
-        if (do_dive_cleaning) {
+        // Shift scalar component F for div(E) cleaning
+        if (do_divE_cleaning) {
             // Fine grid
             shiftMF(*F_fp[lev], geom[lev], num_shift, dir, ng_zero);
             if (do_pml && pml[lev]->ok()) {

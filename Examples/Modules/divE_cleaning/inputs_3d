@@ -8,7 +8,7 @@ geometry.is_periodic = 0     0     0      # Is periodic?
 geometry.prob_lo     = -50.e-6   -50.e-6  -50.e-6
 geometry.prob_hi     =  50.e-6    50.e-6   50.e-6
 
-warpx.do_dive_cleaning = 1
+warpx.do_divE_cleaning = 1
 warpx.do_pml = 1
 
 particles.species_names = beam

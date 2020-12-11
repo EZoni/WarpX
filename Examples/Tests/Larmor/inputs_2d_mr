@@ -64,7 +64,7 @@ interpolation.noz = 3
 # Moving window
 warpx.do_moving_window = 0
 
-warpx.do_dive_cleaning = 1
+warpx.do_divE_cleaning = 1
 
 # Diagnostics
 diagnostics.diags_names = diag1 diagraw

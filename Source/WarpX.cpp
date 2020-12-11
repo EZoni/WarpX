@@ -70,7 +70,7 @@ long WarpX::field_gathering_algo;
 long WarpX::particle_pusher_algo;
 int WarpX::maxwell_solver_id;
 long WarpX::load_balance_costs_update_algo;
-int WarpX::do_dive_cleaning = 0;
+int WarpX::do_divE_cleaning = 0;
 int WarpX::em_solver_medium;
 int WarpX::macroscopic_solver_algo;
 
@@ -512,7 +512,7 @@ WarpX::ReadParameters ()
 
         pp.query("serialize_ics", serialize_ics);
         pp.query("refine_plasma", refine_plasma);
-        pp.query("do_dive_cleaning", do_dive_cleaning);
+        pp.query("do_divE_cleaning", do_divE_cleaning);
         pp.query("n_field_gather_buffer", n_field_gather_buffer);
         pp.query("n_current_deposition_buffer", n_current_deposition_buffer);
 #ifdef AMREX_USE_GPU
@@ -1065,10 +1065,10 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
     Efield_avg_fp[lev][2] = std::make_unique<MultiFab>(amrex::convert(ba,Ez_nodal_flag),dm,ncomps,ngE);
 
 #ifdef WARPX_USE_PSATD
-    const bool deposit_charge = do_dive_cleaning || (plot_rho && do_back_transformed_diagnostics)
+    const bool deposit_charge = do_divE_cleaning || (plot_rho && do_back_transformed_diagnostics)
                                 || update_with_rho || current_correction;
 #else
-    const bool deposit_charge = do_dive_cleaning || (plot_rho && do_back_transformed_diagnostics);
+    const bool deposit_charge = do_divE_cleaning || (plot_rho && do_back_transformed_diagnostics);
 #endif
     if (deposit_charge)
     {
@@ -1088,7 +1088,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         current_store[lev][2] = std::make_unique<MultiFab>(amrex::convert(ba,jz_nodal_flag),dm,ncomps,ngJ);
     }
 
-    if (do_dive_cleaning)
+    if (do_divE_cleaning)
     {
         F_fp[lev] = std::make_unique<MultiFab>(amrex::convert(ba,IntVect::TheUnitVector()),dm,ncomps, ngF.max());
     }
@@ -1100,7 +1100,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         AMREX_ALWAYS_ASSERT_WITH_MESSAGE( false,
             "WarpX::AllocLevelMFs: PSATD solver requires WarpX build with spectral solver support.");
 #else
-        if (!do_dive_cleaning)
+        if (!do_divE_cleaning)
             rho_fp[lev] = std::make_unique<MultiFab>(amrex::convert(ba,rho_nodal_flag),dm,2*ncomps,ngRho);
 
 #   if (AMREX_SPACEDIM == 3)
@@ -1230,10 +1230,10 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         current_cp[lev][1] = std::make_unique<MultiFab>(amrex::convert(cba,jy_nodal_flag),dm,ncomps,ngJ);
         current_cp[lev][2] = std::make_unique<MultiFab>(amrex::convert(cba,jz_nodal_flag),dm,ncomps,ngJ);
 
-        if (do_dive_cleaning || (plot_rho && do_back_transformed_diagnostics)) {
+        if (do_divE_cleaning || (plot_rho && do_back_transformed_diagnostics)) {
             rho_cp[lev] = std::make_unique<MultiFab>(amrex::convert(cba,rho_nodal_flag),dm,2*ncomps,ngRho);
         }
-        if (do_dive_cleaning)
+        if (do_divE_cleaning)
         {
             F_cp[lev] = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheUnitVector()),dm,ncomps, ngF.max());
         }
@@ -1244,7 +1244,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
             AMREX_ALWAYS_ASSERT_WITH_MESSAGE( false,
                 "WarpX::AllocLevelMFs: PSATD solver requires WarpX build with spectral solver support.");
 #else
-            if (!do_dive_cleaning)
+            if (!do_divE_cleaning)
                 rho_cp[lev] = std::make_unique<MultiFab>( amrex::convert(cba,rho_nodal_flag),dm,2*ncomps,ngRho );
 
 #   if (AMREX_SPACEDIM == 3)

@@ -255,7 +255,7 @@ WarpX::EvolveE (int lev, PatchType patch_type, amrex::Real a_dt)
 void
 WarpX::EvolveF (amrex::Real a_dt, DtType a_dt_type)
 {
-    if (!do_dive_cleaning) return;
+    if (!do_divE_cleaning) return;
 
     for (int lev = 0; lev <= finest_level; ++lev)
     {
@@ -266,7 +266,7 @@ WarpX::EvolveF (amrex::Real a_dt, DtType a_dt_type)
 void
 WarpX::EvolveF (int lev, amrex::Real a_dt, DtType a_dt_type)
 {
-    if (!do_dive_cleaning) return;
+    if (!do_divE_cleaning) return;
 
     EvolveF(lev, PatchType::fine, a_dt, a_dt_type);
     if (lev > 0) EvolveF(lev, PatchType::coarse, a_dt, a_dt_type);
@@ -275,7 +275,7 @@ WarpX::EvolveF (int lev, amrex::Real a_dt, DtType a_dt_type)
 void
 WarpX::EvolveF (int lev, PatchType patch_type, amrex::Real a_dt, DtType a_dt_type)
 {
-    if (!do_dive_cleaning) return;
+    if (!do_divE_cleaning) return;
 
     WARPX_PROFILE("WarpX::EvolveF()");
 

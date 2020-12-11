@@ -146,7 +146,7 @@ public:
     bool update_with_rho = false;
 
     // div E cleaning
-    static int do_dive_cleaning;
+    static int do_divE_cleaning;
 
     // Interpolation order
     static long nox;

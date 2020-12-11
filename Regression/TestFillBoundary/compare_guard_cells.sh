@@ -165,7 +165,7 @@ for NCI_CORR in 0 1; do
                                                        amr.plot_file=$WHICH/plt \
                                                        warpx.do_pml=$PML \
                                                        amr.max_level=$MAXLEV \
-                                                       warpx.do_dive_cleaning=$DIVE \
+                                                       warpx.do_divE_cleaning=$DIVE \
                                                        warpx.do_subcycling=$SUBCYCLING \
                                                        warpx.do_nodal=$NODAL \
                                                        algo.field_gathering=$GATHER \

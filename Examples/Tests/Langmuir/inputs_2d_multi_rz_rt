@@ -36,7 +36,7 @@ interpolation.noz = 1
 warpx.cfl = 1.0
 
 # Having this turned on makes for a more sensitive test
-warpx.do_dive_cleaning = 1
+warpx.do_divE_cleaning = 1
 
 # Parameters for the plasma wave
 my_constants.epsilon = 0.01

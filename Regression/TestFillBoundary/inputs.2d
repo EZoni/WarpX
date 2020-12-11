@@ -18,7 +18,7 @@ warpx.verbose = 1
 warpx.cfl = .9999
 amr.plot_int = 1000
 
-warpx.do_dive_cleaning = 1
+warpx.do_divE_cleaning = 1
 particles.use_fdtd_nci_corr = 0
 warpx.use_filter=0
 warpx.filter_npass_each_dir=1 4
