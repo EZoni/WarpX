@@ -424,14 +424,26 @@ MultiSigmaBox::ComputePMLFactorsE (const Real* dx, Real dt)
     }
 }
 
-PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
-          const Geometry* geom, const Geometry* cgeom,
-          int ncell, int delta, int ref_ratio,
-          // PSATD
-          Real dt, int nox_fft, int noy_fft, int noz_fft, bool do_nodal,
-          int do_divE_cleaning, int do_moving_window,
-          int /*pml_has_particles*/, int do_pml_in_domain,
-          const amrex::IntVect do_pml_Lo, const amrex::IntVect do_pml_Hi)
+PML::PML (
+    const BoxArray& grid_ba,
+    const DistributionMapping& /*grid_dm*/,
+    const Geometry* geom,
+    const Geometry* cgeom,
+    int ncell,
+    int delta,
+    int ref_ratio,
+    amrex::Real dt,
+    int nox_fft,
+    int noy_fft,
+    int noz_fft,
+    bool do_nodal,
+    const bool do_divE_cleaning,
+    const bool do_divB_cleaning,
+    int do_moving_window,
+    int /*pml_has_particles*/,
+    int do_pml_in_domain,
+    const amrex::IntVect do_pml_Lo,
+    const amrex::IntVect do_pml_Hi)
     : m_divE_cleaning(do_divE_cleaning),
       m_geom(geom),
       m_cgeom(cgeom)
@@ -535,6 +547,13 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
         pml_F_fp->setVal(0.0);
     }
 
+    if (do_divB_cleaning)
+    {
+        // TODO Shall we define a separate guard cells parameter ngG?
+        pml_G_fp = std::make_unique<MultiFab>(amrex::convert(ba,IntVect::TheZeroVector()), dm, 3, ngf);
+        pml_G_fp->setVal(0.0);
+    }
+
     if (do_pml_in_domain){
         sigba_fp = std::make_unique<MultiSigmaBox>(ba, dm, grid_ba_reduced, geom->CellSize(), ncell, delta);
     }
@@ -601,8 +620,15 @@ PML::PML (const BoxArray& grid_ba, const DistributionMapping& /*grid_dm*/,
         {
             pml_F_cp = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheUnitVector()), cdm, 3, ngf);
             pml_F_cp->setVal(0.0);
-
         }
+
+        if (do_divB_cleaning)
+        {
+            // TODO Shall we define a separate guard cells parameter ngG?
+            pml_G_cp = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheZeroVector()), cdm, 3, ngf);
+            pml_G_cp->setVal(0.0);
+        }
+
         pml_j_cp[0] = std::make_unique<MultiFab>(amrex::convert( cba,
             WarpX::GetInstance().getcurrent_cp(1,0).ixType().toIntVect() ), cdm, 1, ngb );
         pml_j_cp[1] = std::make_unique<MultiFab>(amrex::convert( cba,
@@ -777,6 +803,18 @@ MultiFab*
 PML::GetF_cp ()
 {
     return pml_F_cp.get();
+}
+
+MultiFab*
+PML::GetG_fp ()
+{
+    return pml_G_fp.get();
+}
+
+MultiFab*
+PML::GetG_cp ()
+{
+    return pml_G_cp.get();
 }
 
 void
@@ -1089,12 +1127,15 @@ PML::Restart (const std::string& dir)
 
 #ifdef WARPX_USE_PSATD
 void
-PML::PushPSATD () {
+PML::PushPSATD ()
+{
+    // Update the fields on the fine patch
+    PushPMLPSATDSinglePatch(*spectral_solver_fp, pml_E_fp, pml_B_fp, pml_F_fp, pml_G_fp);
 
-    // Update the fields on the fine and coarse patch
-    PushPMLPSATDSinglePatch(*spectral_solver_fp, pml_E_fp, pml_B_fp, m_divE_cleaning);
-    if (spectral_solver_cp) {
-        PushPMLPSATDSinglePatch(*spectral_solver_cp, pml_E_cp, pml_B_cp, m_divE_cleaning);
+    // Update the fields on the coarse patch
+    if (spectral_solver_cp)
+    {
+        PushPMLPSATDSinglePatch(*spectral_solver_cp, pml_E_cp, pml_B_cp, pml_F_cp, pml_G_cp);
     }
 }
 
@@ -1103,14 +1144,14 @@ PushPMLPSATDSinglePatch (
     SpectralSolver& solver,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_E,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B,
-    const bool divE_cleaning) {
-
+    std::unique_ptr<amrex::MultiFab>& pml_F,
+    std::unique_ptr<amrex::MultiFab>& pml_G)
+{
     using SpIdx = SpectralPMLIndex;
 
-    // Perform forward Fourier transform
-    // NOTE The correspondence between the spectral PML index (Exy, Ezx, ...)
-    //      and the component (PMLComp::xy, PMComp::zx, ...) of the MultiFabs
-    //      is dictated by the function that damps the PML
+    // Perform forward Fourier transforms
+    // The correspondence between the spectral PML index (Exy, Ezx, ...) and the component
+    // (PMLComp::xy, PMComp::zx, ...) of the MultiFabs is dictated by the function that damps the PML
     solver.ForwardTransform(*pml_E[0], SpIdx::Exy, PMLComp::xy);
     solver.ForwardTransform(*pml_E[0], SpIdx::Exz, PMLComp::xz);
     solver.ForwardTransform(*pml_E[1], SpIdx::Eyx, PMLComp::yx);
@@ -1123,14 +1164,33 @@ PushPMLPSATDSinglePatch (
     solver.ForwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.ForwardTransform(*pml_B[2], SpIdx::Bzx, PMLComp::zx);
     solver.ForwardTransform(*pml_B[2], SpIdx::Bzy, PMLComp::zy);
-    if (divE_cleaning) {
+
+    // div(E) cleaning
+    if (pml_F)
+    {
         solver.ForwardTransform(*pml_E[0], SpIdx::Exx, PMLComp::xx);
         solver.ForwardTransform(*pml_E[1], SpIdx::Eyy, PMLComp::yy);
         solver.ForwardTransform(*pml_E[2], SpIdx::Ezz, PMLComp::zz);
+        solver.ForwardTransform(*pml_F, SpIdx::Fx, PMLComp::x);
+        solver.ForwardTransform(*pml_F, SpIdx::Fy, PMLComp::y);
+        solver.ForwardTransform(*pml_F, SpIdx::Fz, PMLComp::z);
     }
+
+    // div(B) cleaning
+    if (pml_G)
+    {
+        solver.ForwardTransform(*pml_B[0], SpIdx::Bxx, PMLComp::xx);
+        solver.ForwardTransform(*pml_B[1], SpIdx::Byy, PMLComp::yy);
+        solver.ForwardTransform(*pml_B[2], SpIdx::Bzz, PMLComp::zz);
+        solver.ForwardTransform(*pml_G, SpIdx::Gx, PMLComp::x);
+        solver.ForwardTransform(*pml_G, SpIdx::Gy, PMLComp::y);
+        solver.ForwardTransform(*pml_G, SpIdx::Gz, PMLComp::z);
+    }
+
     // Advance fields in spectral space
     solver.pushSpectralFields();
-    // Perform backward Fourier Transform
+
+    // Perform backward Fourier transforms
     solver.BackwardTransform(*pml_E[0], SpIdx::Exy, PMLComp::xy);
     solver.BackwardTransform(*pml_E[0], SpIdx::Exz, PMLComp::xz);
     solver.BackwardTransform(*pml_E[1], SpIdx::Eyx, PMLComp::yx);
@@ -1143,10 +1203,29 @@ PushPMLPSATDSinglePatch (
     solver.BackwardTransform(*pml_B[1], SpIdx::Byz, PMLComp::yz);
     solver.BackwardTransform(*pml_B[2], SpIdx::Bzx, PMLComp::zx);
     solver.BackwardTransform(*pml_B[2], SpIdx::Bzy, PMLComp::zy);
-    if (divE_cleaning) {
+
+    // div(E) cleaning
+    if (pml_F)
+    {
+        // TODO Which fields need to be transformed back to real space?
         solver.BackwardTransform(*pml_E[0], SpIdx::Exx, PMLComp::xx);
         solver.BackwardTransform(*pml_E[1], SpIdx::Eyy, PMLComp::yy);
         solver.BackwardTransform(*pml_E[2], SpIdx::Ezz, PMLComp::zz);
+        solver.BackwardTransform(*pml_F, SpIdx::Fx, PMLComp::x);
+        solver.BackwardTransform(*pml_F, SpIdx::Fy, PMLComp::y);
+        solver.BackwardTransform(*pml_F, SpIdx::Fz, PMLComp::z);
+    }
+
+    // div(B) cleaning
+    if (pml_G)
+    {
+        // TODO Which fields need to be transformed back to real space?
+        solver.BackwardTransform(*pml_B[0], SpIdx::Bxx, PMLComp::xx);
+        solver.BackwardTransform(*pml_B[1], SpIdx::Byy, PMLComp::yy);
+        solver.BackwardTransform(*pml_B[2], SpIdx::Bzz, PMLComp::zz);
+        solver.BackwardTransform(*pml_G, SpIdx::Gx, PMLComp::x);
+        solver.BackwardTransform(*pml_G, SpIdx::Gy, PMLComp::y);
+        solver.BackwardTransform(*pml_G, SpIdx::Gz, PMLComp::z);
     }
 }
 #endif

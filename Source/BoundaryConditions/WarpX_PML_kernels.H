@@ -21,13 +21,13 @@ void warpx_damp_pml_ex (int i, int j, int k, Array4<Real> const& Ex,
                         int xlo,int ylo, int zlo)
 {
 #if (AMREX_SPACEDIM == 3)
-    Ex(i,j,k,0) *= sigma_fac_y[j-ylo];
-    Ex(i,j,k,1) *= sigma_fac_z[k-zlo];
+    Ex(i,j,k,0) *= sigma_fac_y[j-ylo]; // Exy
+    Ex(i,j,k,1) *= sigma_fac_z[k-zlo]; // Exz
 #else
-    Ex(i,j,k,1) *= sigma_fac_z[j-zlo];
+    Ex(i,j,k,1) *= sigma_fac_z[j-zlo]; // Exz
     amrex::ignore_unused(sigma_fac_y, ylo);
 #endif
-    Ex(i,j,k,2) *= sigma_star_fac_x[i-xlo];
+    Ex(i,j,k,2) *= sigma_star_fac_x[i-xlo]; // Exx
 }
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
@@ -38,13 +38,13 @@ void warpx_damp_pml_ey (int i, int j, int k, Array4<Real> const& Ey,
                         int xlo,int ylo, int zlo)
 {
 #if (AMREX_SPACEDIM == 3)
-    Ey(i,j,k,0) *= sigma_fac_z[k-zlo];
-    Ey(i,j,k,2) *= sigma_star_fac_y[j-ylo];
+    Ey(i,j,k,0) *= sigma_fac_z[k-zlo]; // Eyz
+    Ey(i,j,k,2) *= sigma_star_fac_y[j-ylo]; // Eyy
 #else
-    Ey(i,j,k,0) *= sigma_fac_z[j-zlo];
+    Ey(i,j,k,0) *= sigma_fac_z[j-zlo]; // Eyz
     amrex::ignore_unused(sigma_star_fac_y, ylo);
 #endif
-    Ey(i,j,k,1) *= sigma_fac_x[i-xlo];
+    Ey(i,j,k,1) *= sigma_fac_x[i-xlo]; // Eyx
 }
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
@@ -54,12 +54,12 @@ void warpx_damp_pml_ez (int i, int j, int k, Array4<Real> const& Ez,
                         const Real* const sigma_star_fac_z,
                         int xlo,int ylo, int zlo)
 {
-    Ez(i,j,k,0) *= sigma_fac_x[i-xlo];
+    Ez(i,j,k,0) *= sigma_fac_x[i-xlo]; // Ezx
 #if (AMREX_SPACEDIM == 3)
-    Ez(i,j,k,1) *= sigma_fac_y[j-ylo];
-    Ez(i,j,k,2) *= sigma_star_fac_z[k-zlo];
+    Ez(i,j,k,1) *= sigma_fac_y[j-ylo]; // Ezy
+    Ez(i,j,k,2) *= sigma_star_fac_z[k-zlo]; // Ezz
 #else
-    Ez(i,j,k,2) *= sigma_star_fac_z[j-zlo];
+    Ez(i,j,k,2) *= sigma_star_fac_z[j-zlo]; // Ezz
     amrex::ignore_unused(sigma_fac_y, ylo);
 #endif
 }
@@ -72,10 +72,10 @@ void warpx_damp_pml_bx (int i, int j, int k, Array4<Real> const& Bx,
                         int ylo, int zlo)
 {
 #if (AMREX_SPACEDIM == 3)
-   Bx(i,j,k,0) *= sigma_star_fac_y[j-ylo];
-   Bx(i,j,k,1) *= sigma_star_fac_z[k-zlo];
+   Bx(i,j,k,0) *= sigma_star_fac_y[j-ylo]; // Bxy
+   Bx(i,j,k,1) *= sigma_star_fac_z[k-zlo]; // Bxz
 #else
-   Bx(i,j,k,1) *= sigma_star_fac_z[j-zlo];
+   Bx(i,j,k,1) *= sigma_star_fac_z[j-zlo]; // Bxz
    amrex::ignore_unused(sigma_star_fac_y, ylo);
 #endif
 }
@@ -87,11 +87,11 @@ void warpx_damp_pml_by (int i, int j, int k, Array4<Real> const& By,
                         int zlo, int xlo)
 {
 #if (AMREX_SPACEDIM == 3)
-   By(i,j,k,0) *= sigma_star_fac_z[k-zlo];
+   By(i,j,k,0) *= sigma_star_fac_z[k-zlo]; // Byz
 #else
-   By(i,j,k,0) *= sigma_star_fac_z[j-zlo];
+   By(i,j,k,0) *= sigma_star_fac_z[j-zlo]; // Byz
 #endif
-   By(i,j,k,1) *= sigma_star_fac_x[i-xlo];
+   By(i,j,k,1) *= sigma_star_fac_x[i-xlo]; // Byx
 }
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
@@ -100,9 +100,9 @@ void warpx_damp_pml_bz (int i, int j, int k, Array4<Real> const& Bz,
                         const Real* const sigma_star_fac_y,
                         int xlo, int ylo)
 {
-   Bz(i,j,k,0) *= sigma_star_fac_x[i-xlo];
+   Bz(i,j,k,0) *= sigma_star_fac_x[i-xlo]; // Bzx
 #if (AMREX_SPACEDIM == 3)
-   Bz(i,j,k,1) *= sigma_star_fac_y[j-ylo];
+   Bz(i,j,k,1) *= sigma_star_fac_y[j-ylo]; // Bzy
 #else
    amrex::ignore_unused(sigma_star_fac_y, ylo);
 #endif
@@ -110,17 +110,17 @@ void warpx_damp_pml_bz (int i, int j, int k, Array4<Real> const& Bz,
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 void warpx_damp_pml_F (int i, int j, int k, Array4<Real> const& F_fab,
-                      const Real* const sigma_fac_x,
-                      const Real* const sigma_fac_y,
-                      const Real* const sigma_fac_z,
-                      int xlo, int ylo, int zlo)
+                       const Real* const sigma_fac_x,
+                       const Real* const sigma_fac_y,
+                       const Real* const sigma_fac_z,
+                       int xlo, int ylo, int zlo)
 {
-   F_fab(i,j,k,0) *= sigma_fac_x[i-xlo];
+   F_fab(i,j,k,0) *= sigma_fac_x[i-xlo]; // Fx
 #if (AMREX_SPACEDIM == 3)
-   F_fab(i,j,k,1) *= sigma_fac_y[j-ylo];
-   F_fab(i,j,k,2) *= sigma_fac_z[k-zlo];
+   F_fab(i,j,k,1) *= sigma_fac_y[j-ylo]; // Fy
+   F_fab(i,j,k,2) *= sigma_fac_z[k-zlo]; // Fz
 #else
-   F_fab(i,j,k,2) *= sigma_fac_z[j-zlo];
+   F_fab(i,j,k,2) *= sigma_fac_z[j-zlo]; // Fz
    amrex::ignore_unused(sigma_fac_y, ylo);
 #endif
 }

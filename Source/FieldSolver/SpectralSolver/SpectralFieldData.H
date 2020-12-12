@@ -38,7 +38,7 @@ struct SpectralAvgFieldIndex {
 struct SpectralPMLIndex {
   enum {Exx=0, Exy, Exz, Eyx, Eyy, Eyz, Ezx, Ezy, Ezz,
         Bxx  , Bxy, Bxz, Byx, Byy, Byz, Bzx, Bzy, Bzz,
-        Fx, Fy, Fz, n_fields};
+        Fx, Fy, Fz, Gx, Gy, Gz, n_fields};
 };
 
 /** \brief Class that stores the fields in spectral space, and performs the

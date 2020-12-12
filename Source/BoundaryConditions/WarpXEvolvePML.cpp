@@ -122,21 +122,18 @@ WarpX::DampPML (int lev, PatchType patch_type)
                                   sigma_star_fac_y,x_lo,y_lo);
             });
 
-            if (pml_F) {
-               // Note that for warpx_damp_pml_F(), mfi.nodaltilebox is used in
-               // the ParallelFor loop and here we use mfi.tilebox.
-               /// But, it does not matter because in damp_pml, where
-               // nodaltilebox is used, only a simple multiplication is performed.
-                const Box& tnd  = mfi.nodaltilebox();
+            // For warpx_damp_pml_F(), mfi.nodaltilebox is used in the ParallelFor loop and here we
+            // use mfi.tilebox. However, it does not matter because in damp_pml, where nodaltilebox
+            // is used, only a simple multiplication is performed.
+            if (pml_F)
+            {
+                const Box& tnd = mfi.nodaltilebox();
                 auto const& pml_F_fab = pml_F->array(mfi);
-                amrex::ParallelFor(tnd,
-                [=] AMREX_GPU_DEVICE (int i, int j, int k)
+                amrex::ParallelFor(tnd, [=] AMREX_GPU_DEVICE (int i, int j, int k)
                 {
-                    warpx_damp_pml_F(i,j,k,pml_F_fab,sigma_fac_x,
-                                     sigma_fac_y,sigma_fac_z,
-                                     x_lo,y_lo,z_lo);
+                    warpx_damp_pml_F(i, j, k, pml_F_fab,
+                        sigma_fac_x, sigma_fac_y, sigma_fac_z, x_lo, y_lo, z_lo);
                 });
-
             }
         }
     }

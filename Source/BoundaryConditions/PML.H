@@ -98,13 +98,23 @@ enum struct PatchType : int;
 class PML
 {
 public:
-    PML (const amrex::BoxArray& ba, const amrex::DistributionMapping& dm,
-         const amrex::Geometry* geom, const amrex::Geometry* cgeom,
-         int ncell, int delta, int ref_ratio,
-         // PSATD
-         amrex::Real dt, int nox_fft, int noy_fft, int noz_fft, bool do_nodal,
-         int do_divE_cleaning, int do_moving_window,
-         int pml_has_particles, int do_pml_in_domain,
+    PML (const amrex::BoxArray& ba,
+         const amrex::DistributionMapping& dm,
+         const amrex::Geometry* geom,
+         const amrex::Geometry* cgeom,
+         int ncell,
+         int delta,
+         int ref_ratio,
+         amrex::Real dt,
+         int nox_fft,
+         int noy_fft,
+         int noz_fft,
+         bool do_nodal,
+         const bool do_divE_cleaning,
+         const bool do_divB_cleaning,
+         int do_moving_window,
+         int pml_has_particles,
+         int do_pml_in_domain,
          const amrex::IntVect do_pml_Lo = amrex::IntVect::TheUnitVector(),
          const amrex::IntVect do_pml_Hi = amrex::IntVect::TheUnitVector());
 
@@ -119,6 +129,9 @@ public:
 
     amrex::MultiFab* GetF_fp ();
     amrex::MultiFab* GetF_cp ();
+
+    amrex::MultiFab* GetG_fp ();
+    amrex::MultiFab* GetG_cp ();
 
     const MultiSigmaBox& GetMultiSigmaBox_fp () const
         { return *sigba_fp; }
@@ -179,8 +192,13 @@ private:
     std::array<std::unique_ptr<amrex::MultiFab>,3> pml_B_cp;
     std::array<std::unique_ptr<amrex::MultiFab>,3> pml_j_cp;
 
+    // div(E) cleaning
     std::unique_ptr<amrex::MultiFab> pml_F_fp;
     std::unique_ptr<amrex::MultiFab> pml_F_cp;
+
+    // div(B) cleaning
+    std::unique_ptr<amrex::MultiFab> pml_G_fp;
+    std::unique_ptr<amrex::MultiFab> pml_G_cp;
 
     std::unique_ptr<MultiSigmaBox> sigba_fp;
     std::unique_ptr<MultiSigmaBox> sigba_cp;
@@ -203,7 +221,8 @@ private:
 void PushPMLPSATDSinglePatch(SpectralSolver& solver,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_E,
     std::array<std::unique_ptr<amrex::MultiFab>,3>& pml_B,
-    const bool divE_cleaning);
+    std::unique_ptr<amrex::MultiFab>& pml_F,
+    std::unique_ptr<amrex::MultiFab>& pml_G);
 #endif
 
 #endif

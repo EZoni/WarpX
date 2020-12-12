@@ -70,7 +70,8 @@ long WarpX::field_gathering_algo;
 long WarpX::particle_pusher_algo;
 int WarpX::maxwell_solver_id;
 long WarpX::load_balance_costs_update_algo;
-int WarpX::do_divE_cleaning = 0;
+bool WarpX::do_divE_cleaning = 0;
+bool WarpX::do_divB_cleaning = 0;
 int WarpX::em_solver_medium;
 int WarpX::macroscopic_solver_algo;
 
@@ -208,6 +209,7 @@ WarpX::WarpX ()
     Bfield_avg_aux.resize(nlevs_max);
 
     F_fp.resize(nlevs_max);
+    G_fp.resize(nlevs_max);
     rho_fp.resize(nlevs_max);
     phi_fp.resize(nlevs_max);
     current_fp.resize(nlevs_max);
@@ -219,6 +221,7 @@ WarpX::WarpX ()
     current_store.resize(nlevs_max);
 
     F_cp.resize(nlevs_max);
+    G_cp.resize(nlevs_max);
     rho_cp.resize(nlevs_max);
     current_cp.resize(nlevs_max);
     Efield_cp.resize(nlevs_max);
@@ -513,6 +516,7 @@ WarpX::ReadParameters ()
         pp.query("serialize_ics", serialize_ics);
         pp.query("refine_plasma", refine_plasma);
         pp.query("do_divE_cleaning", do_divE_cleaning);
+        pp.query("do_divB_cleaning", do_divB_cleaning);
         pp.query("n_field_gather_buffer", n_field_gather_buffer);
         pp.query("n_current_deposition_buffer", n_current_deposition_buffer);
 #ifdef AMREX_USE_GPU
@@ -913,9 +917,11 @@ WarpX::ClearLevel (int lev)
     gather_buffer_masks[lev].reset();
 
     F_fp  [lev].reset();
+    G_fp  [lev].reset();
     rho_fp[lev].reset();
     phi_fp[lev].reset();
     F_cp  [lev].reset();
+    G_cp  [lev].reset();
     rho_cp[lev].reset();
 
     costs[lev].reset();
@@ -1092,6 +1098,11 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
     {
         F_fp[lev] = std::make_unique<MultiFab>(amrex::convert(ba,IntVect::TheUnitVector()),dm,ncomps, ngF.max());
     }
+    if (do_divB_cleaning)
+    {
+        // TODO Shall we define a separate guard cells parameter ngG?
+        G_fp[lev] = std::make_unique<MultiFab>(amrex::convert(ba,IntVect::TheZeroVector()),dm,ncomps, ngF.max());
+    }
     bool const pml_flag_false = false;
     if (WarpX::maxwell_solver_id == MaxwellSolverAlgo::PSATD)
     {
@@ -1236,6 +1247,11 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         if (do_divE_cleaning)
         {
             F_cp[lev] = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheUnitVector()),dm,ncomps, ngF.max());
+        }
+        if (do_divB_cleaning)
+        {
+            // TODO Shall we define a separate guard cells parameter ngG?
+            G_cp[lev] = std::make_unique<MultiFab>(amrex::convert(cba,IntVect::TheZeroVector()),dm,ncomps, ngF.max());
         }
         if (WarpX::maxwell_solver_id == MaxwellSolverAlgo::PSATD)
         {
