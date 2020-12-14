@@ -1151,9 +1151,10 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         realspace_ba.grow(ngE); // add guard cells
     }
     bool const pml_flag_false=false;
-    spectral_solver_fp[lev] = std::make_unique<SpectralSolver>( realspace_ba, dm,
-        nox_fft, noy_fft, noz_fft, do_nodal, m_v_galilean, m_v_comoving, dx_vect, dt[lev],
-        pml_flag_false, fft_periodic_single_box, update_with_rho, fft_do_time_averaging );
+    spectral_solver_fp[lev] = std::make_unique<SpectralSolver>(
+        realspace_ba, dm, nox_fft, noy_fft, noz_fft, do_nodal, m_v_galilean, m_v_comoving,
+        dx_vect, dt[lev], pml_flag_false, fft_periodic_single_box, update_with_rho,
+        fft_do_time_averaging, do_divE_cleaning, do_divB_cleaning);
 #   endif
 #endif
     } // MaxwellSolverAlgo::PSATD
@@ -1281,9 +1282,10 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
             }
 #   else
         c_realspace_ba.grow(ngE); // add guard cells
-        spectral_solver_cp[lev] = std::make_unique<SpectralSolver>( c_realspace_ba, dm,
-            nox_fft, noy_fft, noz_fft, do_nodal, m_v_galilean, m_v_comoving, cdx_vect, dt[lev],
-            pml_flag_false, fft_periodic_single_box, update_with_rho, fft_do_time_averaging );
+        spectral_solver_cp[lev] = std::make_unique<SpectralSolver>(
+            c_realspace_ba, dm, nox_fft, noy_fft, noz_fft, do_nodal, m_v_galilean, m_v_comoving,
+            cdx_vect, dt[lev], pml_flag_false, fft_periodic_single_box, update_with_rho,
+            fft_do_time_averaging, do_divE_cleaning, do_divB_cleaning);
 #   endif
 #endif
         } // MaxwellSolverAlgo::PSATD

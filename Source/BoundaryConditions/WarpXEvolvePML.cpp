@@ -135,6 +135,8 @@ WarpX::DampPML (int lev, PatchType patch_type)
                         sigma_fac_x, sigma_fac_y, sigma_fac_z, x_lo, y_lo, z_lo);
                 });
             }
+
+            // TODO Add damp for G here
         }
     }
 }
