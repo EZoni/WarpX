@@ -6,24 +6,21 @@
 WarpX documentation
 ===================
 
-WarpX is an advanced **electromagnetic Particle-In-Cell** code.
+WarpX is an advanced **electromagnetic particle-in-cell** (PIC) code.
 
-It supports many features including:
+It supports advanced numerical features, including:
 
-    - Perfectly-Matched Layers (PML)
-    - Boosted-frame simulations
-    - Mesh refinement
+ - **Lorentz boosted frame** technique;
+ - **mesh refinement** methods based on the `AMReX <https://amrex-codes.github.io/amrex/docs_html/>`__ software framework;
+ - **perfectly matched layers** (PML) for simulations with open boundaries.
 
-For details on the algorithms that WarpX implements, see the section :doc:`theory/theory`.
+In addition, WarpX is a highly-parallel and highly-optimized code, it can run on **GPUs** as well as **multi-core CPUs** and it provides **load balancing** capabilities.
 
-In addition, WarpX is a highly-parallel and highly-optimized code
-which can run on GPUs and multi-core CPUs, and includes load balancing
-capabilities.
-
-In order to learn to use the code, please see the sections below:
+Please use the menu on the left to help you navigate the WarpX documentation.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    building/building
    running_cpp/running_cpp
