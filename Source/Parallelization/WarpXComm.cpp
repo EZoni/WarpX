@@ -356,6 +356,66 @@ WarpX::UpdateAuxilaryDataSameType ()
     }
 }
 
+void WarpX::UpdateCurrentNodalToStag (const int lev)
+{
+    const amrex::IntVect jx_fp_stag = current_fp[lev][0]->ixType().toIntVect();
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+    for (MFIter mfi(*current_fp[lev][0]); mfi.isValid(); ++mfi)
+    {
+        // First round of linear interpolation over full box with ghost cells
+        Box fabbx = mfi.fabbox();
+
+        const int fg_nox = WarpX::field_gathering_nox;
+        const int fg_noy = WarpX::field_gathering_noy;
+        const int fg_noz = WarpX::field_gathering_noz;
+
+        // Device vectors for Fornberg stencil coefficients used for finite-order centering
+        amrex::Real const * stencil_coeffs_x = WarpX::device_centering_stencil_coeffs_x.data();
+        amrex::Real const * stencil_coeffs_y = WarpX::device_centering_stencil_coeffs_y.data();
+        amrex::Real const * stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
+
+        if (fabbx.ok())
+        {
+            amrex::Array4<amrex::Real> const jx_fp_nodal = current_fp_nodal[lev][0]->array(mfi);
+            amrex::Array4<amrex::Real>       jx_fp = current_fp[lev][0]->array(mfi);
+
+            amrex::ParallelFor(fabbx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
+            {
+                warpx_interp_otherway(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, 2, 2, 2,
+                                      stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+            });
+        }
+
+        // Second round of finite-order interpolation over valid box without ghost cells
+        Box valbx = mfi.validbox();
+
+        if (valbx.ok())
+        {
+            amrex::Array4<amrex::Real> const jx_fp_nodal = current_fp_nodal[lev][0]->array(mfi);
+            amrex::Array4<amrex::Real>       jx_fp = current_fp[lev][0]->array(mfi);
+
+            //const amrex::IntVect ng = current_fp[lev][0]->nGrowVect();
+            //const amrex::Dim3 lo = amrex::lbound(Geom(lev).Domain());
+            //const amrex::Dim3 hi = amrex::ubound(Geom(lev).Domain());
+            //const int lo_x = lo.x - ng[0];
+            //const int hi_x = hi.x + ng[0];
+
+            amrex::ParallelFor(valbx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
+            {
+                //const int jmin = j - fg_nox/2;
+                //const int jmax = j + fg_nox/2;
+
+                //if (jmin < lo_x || jmax > hi_x)
+                warpx_interp_otherway(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, fg_nox, fg_noy, fg_noz,
+                                      stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+            });
+        }
+    }
+}
+
 void
 WarpX::FillBoundaryB (IntVect ng, IntVect ng_extra_fine)
 {

@@ -663,4 +663,124 @@ void warpx_interp (const int j,
     arr_aux(j,k,l) = wj * wk * wl * res;
 }
 
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE
+void warpx_interp_otherway (const int j,
+                   const int k,
+                   const int l,
+                   amrex::Array4<amrex::Real      > const& arr_fp,
+                   amrex::Array4<amrex::Real const> const& arr_fp_nodal,
+                   const amrex::IntVect& arr_stag,
+                   const int nox = 2,
+                   const int noy = 2,
+                   const int noz = 2,
+                   amrex::Real const* stencil_coeffs_x = nullptr,
+                   amrex::Real const* stencil_coeffs_y = nullptr,
+                   amrex::Real const* stencil_coeffs_z = nullptr)
+{
+    using namespace amrex;
+
+    // Staggering (s = 0 if cell-centered, s = 1 if nodal)
+    const int sj = arr_stag[0];
+    const int sk = arr_stag[1];
+#if (AMREX_SPACEDIM == 3)
+    const int sl = arr_stag[2];
+#endif
+
+    // Number of points (+1) used for interpolation from the staggered grid to the nodal grid
+    // (if the input field is nodal along a given direction, then s = 1, the variable n = 0
+    // is actually never used, and there is no interpolation, only a copy of one single value)
+    const int nj = (sj == 0) ? nox/2 + 1 : 0;
+#if   (AMREX_SPACEDIM == 2)
+    const int nk = (sk == 0) ? noz/2 + 1 : 0;
+#elif (AMREX_SPACEDIM == 3)
+    const int nk = (sk == 0) ? noy/2 + 1 : 0;
+    const int nl = (sl == 0) ? noz/2 + 1 : 0;
+#endif
+
+    // Additional normalization factor
+    const amrex::Real wj = (sj == 0) ? 0.5_rt : 1.0_rt;
+    const amrex::Real wk = (sk == 0) ? 0.5_rt : 1.0_rt;
+#if   (AMREX_SPACEDIM == 2)
+    constexpr amrex::Real wl = 1.0_rt;
+#elif (AMREX_SPACEDIM == 3)
+    const amrex::Real wl = (sl == 0) ? 0.5_rt : 1.0_rt;
+#endif
+
+    // Auxiliary variables for stencil coefficients
+    amrex::Real cj = 1.0_rt;
+    amrex::Real ck = 1.0_rt;
+    amrex::Real cl = 1.0_rt;
+    int dj, dk;
+#if (AMREX_SPACEDIM == 3)
+    int dl;
+#endif
+
+    // Min and max for interpolation loop along j
+    const int jmin = (sj == 0) ? j - nj + 2 : j;
+    const int jmax = (sj == 0) ? j + nj - 1 : j;
+
+    // Min and max for interpolation loop along k
+    const int kmin = (sk == 0) ? k - nk + 2 : k;
+    const int kmax = (sk == 0) ? k + nk - 1 : k;
+
+    // Min and max for interpolation loop along l
+#if   (AMREX_SPACEDIM == 2)
+    // l = 0 always
+    const int lmin = l;
+    const int lmax = l;
+#elif (AMREX_SPACEDIM == 3)
+    const int lmin = (sl == 0) ? l - nl + 2 : l;
+    const int lmax = (sl == 0) ? l + nl - 1 : l;
+#endif
+
+    amrex::Real res = 0.0_rt;
+
+#ifndef WARPX_USE_PSATD // TODO FDTD (linear interpolation)
+
+#else // PSATD (finite-order interpolation)
+
+    // Example of 1D interpolation from nodal grid to nodal grid:
+    //
+    //         j
+    // --o-----o-----o--  result(j) = f(j)
+    // --o-----o-----o--
+    //  j-1    j    j+1
+    //
+    // Example of 1D interpolation from staggered grid to nodal grid:
+    //
+    //                  j
+    // -----x-----x-----x-----x-----x-----  result(j) = c_0 * (f(j)   + f(j+1)) / 2
+    // --o-----o-----o-----o-----o-----o--            + c_1 * (f(j-1) + f(j+2)) / 2
+    //  j-2   j-1    j    j+1   j+2   j+3             + c_2 * (f(j-2) + f(j+3)) / 2
+    //  c_2   c_1   c_0   c_0   c_1   c_2             + ...
+
+    for (int ll = lmin; ll <= lmax; ll++)
+    {
+#if (AMREX_SPACEDIM == 3)
+        dl = (l - ll < 0) ? ll - l - 1 : l - ll;
+        if (sl == 0) cl = stencil_coeffs_z[dl];
+#endif
+        for (int kk = kmin; kk <= kmax; kk++)
+        {
+            dk = (k - kk < 0) ? kk - k - 1 : k - kk;
+#if   (AMREX_SPACEDIM == 2)
+            if (sk == 0) ck = stencil_coeffs_z[dk];
+#elif (AMREX_SPACEDIM == 3)
+            if (sk == 0) ck = stencil_coeffs_y[dk];
+#endif
+            for (int jj = jmin; jj <= jmax; jj++)
+            {
+                dj = (j - jj < 0) ? jj - j - 1 : j - jj;
+                if (sj == 0) cj = stencil_coeffs_x[dj];
+
+                res += cj * ck * cl * arr_fp_nodal(jj,kk,ll);
+            }
+        }
+    }
+
+#endif
+
+    arr_fp(j,k,l) = wj * wk * wl * res;
+}
+
 #endif

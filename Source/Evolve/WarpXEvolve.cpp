@@ -295,6 +295,13 @@ WarpX::OneStep_nosub (Real cur_time)
     if (warpx_py_beforedeposition) warpx_py_beforedeposition();
     PushParticlesandDepose(cur_time);
 
+    // TODO
+    for (int lev = 0; lev <= finest_level; lev++)
+    {
+        WarpX::UpdateCurrentNodalToStag(lev);
+        //MultiFab::Copy(*current_fp[lev][0], *current_fp_nodal[lev][0], 0, 0, ncomps, guard_cells.ng_alloc_J);
+    }
+
     if (warpx_py_afterdeposition) warpx_py_afterdeposition();
 
 // TODO
@@ -330,7 +337,6 @@ WarpX::OneStep_nosub (Real cur_time)
         if (fft_periodic_single_box && (WarpX::current_deposition_algo == CurrentDepositionAlgo::Vay))
             VayDeposition();
     }
-
 
     // At this point, J is up-to-date inside the domain, and E and B are
     // up-to-date including enough guard cells for first step of the field
@@ -619,17 +625,22 @@ WarpX::PushParticlesandDepose (amrex::Real cur_time)
 void
 WarpX::PushParticlesandDepose (int lev, amrex::Real cur_time, DtType a_dt_type)
 {
+    // TODO
+    amrex::MultiFab* current_x = (current_fp_nodal[lev][0]) ? current_fp_nodal[lev][0].get()
+                                                            : current_fp[lev][0].get();
+
     mypc->Evolve(lev,
                  *Efield_aux[lev][0],*Efield_aux[lev][1],*Efield_aux[lev][2],
                  *Bfield_aux[lev][0],*Bfield_aux[lev][1],*Bfield_aux[lev][2],
                  *Efield_avg_aux[lev][0],*Efield_avg_aux[lev][1],*Efield_avg_aux[lev][2],
                  *Bfield_avg_aux[lev][0],*Bfield_avg_aux[lev][1],*Bfield_avg_aux[lev][2],
-                 *current_fp[lev][0],*current_fp[lev][1],*current_fp[lev][2],
+                 *current_x, *current_fp[lev][1], *current_fp[lev][2],
                  current_buf[lev][0].get(), current_buf[lev][1].get(), current_buf[lev][2].get(),
                  rho_fp[lev].get(), charge_buf[lev].get(),
                  Efield_cax[lev][0].get(), Efield_cax[lev][1].get(), Efield_cax[lev][2].get(),
                  Bfield_cax[lev][0].get(), Bfield_cax[lev][1].get(), Bfield_cax[lev][2].get(),
                  cur_time, dt[lev], a_dt_type);
+
 #ifdef WARPX_DIM_RZ
     // This is called after all particles have deposited their current and charge.
     ApplyInverseVolumeScalingToCurrentDensity(current_fp[lev][0].get(), current_fp[lev][1].get(), current_fp[lev][2].get(), lev);

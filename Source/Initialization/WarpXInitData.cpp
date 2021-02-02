@@ -299,6 +299,10 @@ WarpX::InitLevelData (int lev, Real /*time*/)
 
     for (int i = 0; i < 3; ++i) {
         current_fp[lev][i]->setVal(0.0);
+
+        // TODO
+        current_fp_nodal[lev][i]->setVal(0.0);
+
         if (lev > 0)
            current_cp[lev][i]->setVal(0.0);
 
