@@ -295,11 +295,12 @@ WarpX::OneStep_nosub (Real cur_time)
     if (warpx_py_beforedeposition) warpx_py_beforedeposition();
     PushParticlesandDepose(cur_time);
 
-    // TODO
-    for (int lev = 0; lev <= finest_level; lev++)
+    if (WarpX::do_current_centering)
     {
-        WarpX::UpdateCurrentNodalToStag(lev);
-        //MultiFab::Copy(*current_fp[lev][0], *current_fp_nodal[lev][0], 0, 0, ncomps, guard_cells.ng_alloc_J);
+        for (int lev = 0; lev <= finest_level; lev++)
+        {
+            WarpX::UpdateCurrentNodalToStag(lev);
+        }
     }
 
     if (warpx_py_afterdeposition) warpx_py_afterdeposition();
@@ -626,8 +627,8 @@ void
 WarpX::PushParticlesandDepose (int lev, amrex::Real cur_time, DtType a_dt_type)
 {
     // TODO
-    amrex::MultiFab* current_x = (current_fp_nodal[lev][0]) ? current_fp_nodal[lev][0].get()
-                                                            : current_fp[lev][0].get();
+    amrex::MultiFab* current_x = (WarpX::do_current_centering) ? current_fp_nodal[lev][0].get()
+                                                               : current_fp[lev][0].get();
 
     mypc->Evolve(lev,
                  *Efield_aux[lev][0],*Efield_aux[lev][1],*Efield_aux[lev][2],

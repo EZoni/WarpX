@@ -88,34 +88,34 @@ WarpX::UpdateAuxilaryDataStagToNodal ()
             amrex::Real const * stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
             amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
             {
-                warpx_interp(j, k, l, bx_aux, bx_fp, Bx_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, bx_aux, bx_fp, Bx_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
 
-                warpx_interp(j, k, l, by_aux, by_fp, By_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, by_aux, by_fp, By_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
 
-                warpx_interp(j, k, l, bz_aux, bz_fp, Bz_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, bz_aux, bz_fp, Bz_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
 
-                warpx_interp(j, k, l, ex_aux, ex_fp, Ex_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, ex_aux, ex_fp, Ex_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
 
-                warpx_interp(j, k, l, ey_aux, ey_fp, Ey_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, ey_aux, ey_fp, Ey_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
 
-                warpx_interp(j, k, l, ez_aux, ez_fp, Ez_stag, fg_nox, fg_noy, fg_noz,
-                             stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpStagToNodal(j, k, l, ez_aux, ez_fp, Ez_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
             });
 #endif
         } else { // FDTD
             amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
             {
-                warpx_interp(j, k, l, bx_aux, bx_fp, Bx_stag);
-                warpx_interp(j, k, l, by_aux, by_fp, By_stag);
-                warpx_interp(j, k, l, bz_aux, bz_fp, Bz_stag);
-                warpx_interp(j, k, l, ex_aux, ex_fp, Ex_stag);
-                warpx_interp(j, k, l, ey_aux, ey_fp, Ey_stag);
-                warpx_interp(j, k, l, ez_aux, ez_fp, Ez_stag);
+                LinearInterpStagToNodal(j, k, l, bx_aux, bx_fp, Bx_stag);
+                LinearInterpStagToNodal(j, k, l, by_aux, by_fp, By_stag);
+                LinearInterpStagToNodal(j, k, l, bz_aux, bz_fp, Bz_stag);
+                LinearInterpStagToNodal(j, k, l, ex_aux, ex_fp, Ex_stag);
+                LinearInterpStagToNodal(j, k, l, ey_aux, ey_fp, Ey_stag);
+                LinearInterpStagToNodal(j, k, l, ez_aux, ez_fp, Ez_stag);
             });
         }
     }
@@ -363,19 +363,11 @@ void WarpX::UpdateCurrentNodalToStag (const int lev)
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
+
     for (MFIter mfi(*current_fp[lev][0]); mfi.isValid(); ++mfi)
     {
         // First round of linear interpolation over full box with ghost cells
         Box fabbx = mfi.fabbox();
-
-        const int fg_nox = WarpX::field_gathering_nox;
-        const int fg_noy = WarpX::field_gathering_noy;
-        const int fg_noz = WarpX::field_gathering_noz;
-
-        // Device vectors for Fornberg stencil coefficients used for finite-order centering
-        amrex::Real const * stencil_coeffs_x = WarpX::device_centering_stencil_coeffs_x.data();
-        amrex::Real const * stencil_coeffs_y = WarpX::device_centering_stencil_coeffs_y.data();
-        amrex::Real const * stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
 
         if (fabbx.ok())
         {
@@ -384,16 +376,26 @@ void WarpX::UpdateCurrentNodalToStag (const int lev)
 
             amrex::ParallelFor(fabbx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
             {
-                warpx_interp_otherway(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, 2, 2, 2,
-                                      stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                LinearInterpNodalToStag(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag);
             });
         }
+
+#ifdef WARPX_USE_PSATD
 
         // Second round of finite-order interpolation over valid box without ghost cells
         Box valbx = mfi.validbox();
 
         if (valbx.ok())
         {
+            const int fg_nox = WarpX::field_gathering_nox;
+            const int fg_noy = WarpX::field_gathering_noy;
+            const int fg_noz = WarpX::field_gathering_noz;
+
+            // Device vectors for Fornberg stencil coefficients used for finite-order centering
+            amrex::Real const * stencil_coeffs_x = WarpX::device_centering_stencil_coeffs_x.data();
+            amrex::Real const * stencil_coeffs_y = WarpX::device_centering_stencil_coeffs_y.data();
+            amrex::Real const * stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
+
             amrex::Array4<amrex::Real> const jx_fp_nodal = current_fp_nodal[lev][0]->array(mfi);
             amrex::Array4<amrex::Real>       jx_fp = current_fp[lev][0]->array(mfi);
 
@@ -409,10 +411,11 @@ void WarpX::UpdateCurrentNodalToStag (const int lev)
                 //const int jmax = j + fg_nox/2;
 
                 //if (jmin < lo_x || jmax > hi_x)
-                warpx_interp_otherway(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, fg_nox, fg_noy, fg_noz,
-                                      stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
+                HighOrderInterpNodalToStag(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, fg_nox, fg_noy, fg_noz,
+                                           stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
             });
         }
+#endif
     }
 }
 
