@@ -356,27 +356,35 @@ WarpX::UpdateAuxilaryDataSameType ()
     }
 }
 
-void WarpX::UpdateCurrentNodalToStag (const int lev)
+void WarpX::UpdateCurrentNodalToStag (amrex::MultiFab& dst, amrex::MultiFab const& src)
 {
-    const amrex::IntVect jx_fp_stag = current_fp[lev][0]->ixType().toIntVect();
+    // If source and destination MultiFabs have the same index type, a simple copy is enough
+    // (for example, this happens with the current along y in 2D, which is always fully nodal)
+    if (dst.ixType() == src.ixType())
+    {
+        amrex::MultiFab::Copy(dst, src, 0, 0, dst.nComp(), dst.nGrowVect());
+        return;
+    }
+
+    amrex::IntVect const& dst_stag = dst.ixType().toIntVect();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
 
-    for (MFIter mfi(*current_fp[lev][0]); mfi.isValid(); ++mfi)
+    for (MFIter mfi(dst); mfi.isValid(); ++mfi)
     {
         // First round of linear interpolation over full box with ghost cells
         Box fabbx = mfi.fabbox();
 
         if (fabbx.ok())
         {
-            amrex::Array4<amrex::Real> const jx_fp_nodal = current_fp_nodal[lev][0]->array(mfi);
-            amrex::Array4<amrex::Real>       jx_fp = current_fp[lev][0]->array(mfi);
+            amrex::Array4<amrex::Real const> const& src_fab = src.const_array(mfi);
+            amrex::Array4<amrex::Real>       const& dst_fab = dst.array(mfi);
 
             amrex::ParallelFor(fabbx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
             {
-                LinearInterpNodalToStag(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag);
+                LinearInterpNodalToStag(j, k, l, dst_fab, src_fab, dst_stag);
             });
         }
 
@@ -387,31 +395,21 @@ void WarpX::UpdateCurrentNodalToStag (const int lev)
 
         if (valbx.ok())
         {
-            const int fg_nox = WarpX::field_gathering_nox;
-            const int fg_noy = WarpX::field_gathering_noy;
-            const int fg_noz = WarpX::field_gathering_noz;
+            int const& fg_nox = WarpX::field_gathering_nox;
+            int const& fg_noy = WarpX::field_gathering_noy;
+            int const& fg_noz = WarpX::field_gathering_noz;
 
             // Device vectors for Fornberg stencil coefficients used for finite-order centering
-            amrex::Real const * stencil_coeffs_x = WarpX::device_centering_stencil_coeffs_x.data();
-            amrex::Real const * stencil_coeffs_y = WarpX::device_centering_stencil_coeffs_y.data();
-            amrex::Real const * stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
+            amrex::Real const* stencil_coeffs_x = WarpX::device_centering_stencil_coeffs_x.data();
+            amrex::Real const* stencil_coeffs_y = WarpX::device_centering_stencil_coeffs_y.data();
+            amrex::Real const* stencil_coeffs_z = WarpX::device_centering_stencil_coeffs_z.data();
 
-            amrex::Array4<amrex::Real> const jx_fp_nodal = current_fp_nodal[lev][0]->array(mfi);
-            amrex::Array4<amrex::Real>       jx_fp = current_fp[lev][0]->array(mfi);
-
-            //const amrex::IntVect ng = current_fp[lev][0]->nGrowVect();
-            //const amrex::Dim3 lo = amrex::lbound(Geom(lev).Domain());
-            //const amrex::Dim3 hi = amrex::ubound(Geom(lev).Domain());
-            //const int lo_x = lo.x - ng[0];
-            //const int hi_x = hi.x + ng[0];
+            amrex::Array4<amrex::Real const> const& src_fab = src.const_array(mfi);
+            amrex::Array4<amrex::Real>       const& dst_fab = dst.array(mfi);
 
             amrex::ParallelFor(valbx, [=] AMREX_GPU_DEVICE (int j, int k, int l) noexcept
             {
-                //const int jmin = j - fg_nox/2;
-                //const int jmax = j + fg_nox/2;
-
-                //if (jmin < lo_x || jmax > hi_x)
-                HighOrderInterpNodalToStag(j, k, l, jx_fp, jx_fp_nodal, jx_fp_stag, fg_nox, fg_noy, fg_noz,
+                HighOrderInterpNodalToStag(j, k, l, dst_fab, src_fab, dst_stag, fg_nox, fg_noy, fg_noz,
                                            stencil_coeffs_x, stencil_coeffs_y, stencil_coeffs_z);
             });
         }

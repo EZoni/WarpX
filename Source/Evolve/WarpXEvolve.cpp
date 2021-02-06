@@ -21,7 +21,6 @@
 #include <cmath>
 #include <limits>
 
-
 using namespace amrex;
 
 void
@@ -299,7 +298,9 @@ WarpX::OneStep_nosub (Real cur_time)
     {
         for (int lev = 0; lev <= finest_level; lev++)
         {
-            WarpX::UpdateCurrentNodalToStag(lev);
+            WarpX::UpdateCurrentNodalToStag(*current_fp[lev][0], *current_fp_nodal[lev][0]);
+            WarpX::UpdateCurrentNodalToStag(*current_fp[lev][1], *current_fp_nodal[lev][1]);
+            WarpX::UpdateCurrentNodalToStag(*current_fp[lev][2], *current_fp_nodal[lev][2]);
         }
     }
 
@@ -629,13 +630,17 @@ WarpX::PushParticlesandDepose (int lev, amrex::Real cur_time, DtType a_dt_type)
     // TODO
     amrex::MultiFab* current_x = (WarpX::do_current_centering) ? current_fp_nodal[lev][0].get()
                                                                : current_fp[lev][0].get();
+    amrex::MultiFab* current_y = (WarpX::do_current_centering) ? current_fp_nodal[lev][1].get()
+                                                               : current_fp[lev][1].get();
+    amrex::MultiFab* current_z = (WarpX::do_current_centering) ? current_fp_nodal[lev][2].get()
+                                                               : current_fp[lev][2].get();
 
     mypc->Evolve(lev,
                  *Efield_aux[lev][0],*Efield_aux[lev][1],*Efield_aux[lev][2],
                  *Bfield_aux[lev][0],*Bfield_aux[lev][1],*Bfield_aux[lev][2],
                  *Efield_avg_aux[lev][0],*Efield_avg_aux[lev][1],*Efield_avg_aux[lev][2],
                  *Bfield_avg_aux[lev][0],*Bfield_avg_aux[lev][1],*Bfield_avg_aux[lev][2],
-                 *current_x, *current_fp[lev][1], *current_fp[lev][2],
+                 *current_x, *current_y, *current_z,
                  current_buf[lev][0].get(), current_buf[lev][1].get(), current_buf[lev][2].get(),
                  rho_fp[lev].get(), charge_buf[lev].get(),
                  Efield_cax[lev][0].get(), Efield_cax[lev][1].get(), Efield_cax[lev][2].get(),

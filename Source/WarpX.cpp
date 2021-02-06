@@ -694,11 +694,11 @@ WarpX::ReadParameters ()
         if (WarpX::maxwell_solver_id == MaxwellSolverAlgo::PSATD) {
             // For momentum-conserving field gathering, read from input the order of
             // interpolation from the staggered positions to the grid nodes
-            if (field_gathering_algo == GatheringAlgo::MomentumConserving) {
+            //if (field_gathering_algo == GatheringAlgo::MomentumConserving) {
                 pp.query("field_gathering_nox", field_gathering_nox);
                 pp.query("field_gathering_noy", field_gathering_noy);
                 pp.query("field_gathering_noz", field_gathering_noz);
-            }
+            //}
 
             if (maxLevel() > 0) {
                 AMREX_ALWAYS_ASSERT_WITH_MESSAGE(
@@ -1144,7 +1144,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
 
     if (do_current_centering)
     {
-        amrex::BoxArray nodal_ba = amrex::convert(ba, amrex::IntVect::TheNodeVector());
+        amrex::BoxArray const& nodal_ba = amrex::convert(ba, amrex::IntVect::TheNodeVector());
         current_fp_nodal[lev][0] = std::make_unique<MultiFab>(nodal_ba, dm, ncomps, ngJ);
         current_fp_nodal[lev][1] = std::make_unique<MultiFab>(nodal_ba, dm, ncomps, ngJ);
         current_fp_nodal[lev][2] = std::make_unique<MultiFab>(nodal_ba, dm, ncomps, ngJ);

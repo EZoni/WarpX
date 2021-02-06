@@ -435,7 +435,7 @@ public:
     void UpdateAuxilaryData ();
     void UpdateAuxilaryDataStagToNodal ();
     void UpdateAuxilaryDataSameType ();
-    void UpdateCurrentNodalToStag (const int lev);
+    void UpdateCurrentNodalToStag (amrex::MultiFab& dst, amrex::MultiFab const& src);
 
     // Fill boundary cells including coarse/fine boundaries
     void FillBoundaryB   (amrex::IntVect ng, amrex::IntVect ng_extra_fine=amrex::IntVect::TheZeroVector());
