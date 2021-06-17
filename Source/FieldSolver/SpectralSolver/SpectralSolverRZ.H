@@ -109,17 +109,16 @@ class SpectralSolverRZ
          */
         void VayDeposition (const int lev, std::array<std::unique_ptr<amrex::MultiFab>,3>& current);
 
+        // Defines field update equation in spectral space, and the associated coefficients.
+        // SpectralBaseAlgorithmRZ is a base class; this pointer is meant
+        // to point an instance of a *sub-class* defining a specific algorithm
+        std::unique_ptr<SpectralBaseAlgorithmRZ> algorithm;
+
     private:
 
         SpectralKSpaceRZ k_space; // Save the instance to initialize filtering
         SpectralFieldDataRZ field_data; // Store field in spectral space
                                         // and perform the Fourier transforms
-        std::unique_ptr<SpectralBaseAlgorithmRZ> algorithm;
-        // Defines field update equation in spectral space,
-        // and the associated coefficients.
-        // SpectralBaseAlgorithmRZ is a base class ; this pointer is meant
-        // to point an instance of a *sub-class* defining a specific algorithm
-
 };
 
 #endif // WARPX_SPECTRAL_SOLVER_RZ_H_

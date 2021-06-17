@@ -10,6 +10,9 @@
 #include "FieldSolver/SpectralSolver/SpectralKSpaceRZ.H"
 #include "FieldSolver/SpectralSolver/SpectralFieldDataRZ.H"
 
+#include <string>
+#include <map>
+
 /* \brief Class that updates the field in spectral space
  * and stores the coefficients of the corresponding update equation.
  *
@@ -62,6 +65,9 @@ class SpectralBaseAlgorithmRZ
         virtual void VayDeposition (const int lev,
                                     SpectralFieldDataRZ& field_data,
                                     std::array<std::unique_ptr<amrex::MultiFab>,3>& current) = 0;
+
+        int m_n_fields = 0;
+        std::map<std::string, int> m_Idx;
 
     protected: // Meant to be used in the subclasses
 

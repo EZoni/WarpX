@@ -75,7 +75,7 @@ SpectralSolver::SpectralSolver(
     }
 
     // Initialize arrays for fields in spectral space + FFT plans
-    field_data = SpectralFieldData(lev, realspace_ba, k_space, dm, algorithm->n_fields, periodic_single_box);
+    field_data = SpectralFieldData(lev, realspace_ba, k_space, dm, algorithm->m_n_fields, periodic_single_box);
 }
 
 void

@@ -50,8 +50,8 @@ namespace {
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(lev,
-                                *Efield[0], Idx::Ex,
-                                *Efield[1], Idx::Ey);
+                                *Efield[0], Idx.at("Ex"),
+                                *Efield[1], Idx.at("Ey"));
 #else
         solver.ForwardTransform(lev, *Efield[0], Idx.at("Ex"));
         solver.ForwardTransform(lev, *Efield[1], Idx.at("Ey"));
@@ -59,8 +59,8 @@ namespace {
         solver.ForwardTransform(lev, *Efield[2], Idx.at("Ez"));
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(lev,
-                                *Bfield[0], Idx::Bx,
-                                *Bfield[1], Idx::By);
+                                *Bfield[0], Idx.at("Bx"),
+                                *Bfield[1], Idx.at("By"));
 #else
         solver.ForwardTransform(lev, *Bfield[0], Idx.at("Bx"));
         solver.ForwardTransform(lev, *Bfield[1], Idx.at("By"));
@@ -68,8 +68,8 @@ namespace {
         solver.ForwardTransform(lev, *Bfield[2], Idx.at("Bz"));
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(lev,
-                                *current[0], Idx::Jx,
-                                *current[1], Idx::Jy);
+                                *current[0], Idx.at("Jx"),
+                                *current[1], Idx.at("Jy"));
 #else
         solver.ForwardTransform(lev, *current[0], Idx.at("Jx"));
         solver.ForwardTransform(lev, *current[1], Idx.at("Jy"));
@@ -82,9 +82,9 @@ namespace {
         }
 #ifdef WARPX_DIM_RZ
         if (WarpX::use_kspace_filter) {
-            solver.ApplyFilter(Idx::rho_old);
-            solver.ApplyFilter(Idx::rho_new);
-            solver.ApplyFilter(Idx::Jx, Idx::Jy, Idx::Jz);
+            solver.ApplyFilter(Idx.at("rho_old"));
+            solver.ApplyFilter(Idx.at("rho_new"));
+            solver.ApplyFilter(Idx.at("Jx"), Idx.at("Jy"), Idx.at("Jz"));
         }
 #endif
         // Advance fields in spectral space
@@ -92,8 +92,8 @@ namespace {
         // Perform backward Fourier Transform
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(lev,
-                                 *Efield[0], Idx::Ex,
-                                 *Efield[1], Idx::Ey);
+                                 *Efield[0], Idx.at("Ex"),
+                                 *Efield[1], Idx.at("Ey"));
 #else
         solver.BackwardTransform(lev, *Efield[0], Idx.at("Ex"));
         solver.BackwardTransform(lev, *Efield[1], Idx.at("Ey"));
@@ -101,8 +101,8 @@ namespace {
         solver.BackwardTransform(lev, *Efield[2], Idx.at("Ez"));
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(lev,
-                                 *Bfield[0], Idx::Bx,
-                                 *Bfield[1], Idx::By);
+                                 *Bfield[0], Idx.at("Bx"),
+                                 *Bfield[1], Idx.at("By"));
 #else
         solver.BackwardTransform(lev, *Bfield[0], Idx.at("Bx"));
         solver.BackwardTransform(lev, *Bfield[1], Idx.at("By"));

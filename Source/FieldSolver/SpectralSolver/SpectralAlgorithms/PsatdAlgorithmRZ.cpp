@@ -36,6 +36,35 @@ PsatdAlgorithmRZ::PsatdAlgorithmRZ (SpectralKSpaceRZ const & spectral_kspace,
     X3_coef = SpectralRealCoefficients(ba, dm, n_rz_azimuthal_modes, 0);
 
     coefficients_initialized = false;
+
+    if (update_with_rho)
+    {
+        // E (3x), B (3x), J (3x), div(E) (1x), rho (2x)
+        m_n_fields = 12;
+    }
+    else
+    {
+        // E (3x), B (3x), J (3x), div(E) (1x)
+        m_n_fields = 10;
+    }
+
+    int c = 0;
+    m_Idx.insert(std::pair<std::string, int>("Ex", c++));
+    m_Idx.insert(std::pair<std::string, int>("Ey", c++));
+    m_Idx.insert(std::pair<std::string, int>("Ez", c++));
+    m_Idx.insert(std::pair<std::string, int>("Bx", c++));
+    m_Idx.insert(std::pair<std::string, int>("By", c++));
+    m_Idx.insert(std::pair<std::string, int>("Bz", c++));
+    m_Idx.insert(std::pair<std::string, int>("Jx", c++));
+    m_Idx.insert(std::pair<std::string, int>("Jy", c++));
+    m_Idx.insert(std::pair<std::string, int>("Jz", c++));
+    m_Idx.insert(std::pair<std::string, int>("divE", c++));
+
+    if (update_with_rho)
+    {
+        m_Idx.insert(std::pair<std::string, int>("rho_old", c++));
+        m_Idx.insert(std::pair<std::string, int>("rho_new", c++));
+    }
 }
 
 /* Advance the E and B field in spectral space (stored in `f`)
@@ -43,7 +72,6 @@ PsatdAlgorithmRZ::PsatdAlgorithmRZ (SpectralKSpaceRZ const & spectral_kspace,
 void
 PsatdAlgorithmRZ::pushSpectralFields(SpectralFieldDataRZ & f)
 {
-
     bool const update_with_rho = m_update_with_rho;
 
     if (not coefficients_initialized) {
@@ -52,6 +80,22 @@ PsatdAlgorithmRZ::pushSpectralFields(SpectralFieldDataRZ & f)
         InitializeSpectralCoefficients(f);
         coefficients_initialized = true;
     }
+
+    const int Idx_Ex = m_Idx.at("Ex");
+    const int Idx_Ey = m_Idx.at("Ey");
+    const int Idx_Ez = m_Idx.at("Ez");
+    const int Idx_Bx = m_Idx.at("Bx");
+    const int Idx_By = m_Idx.at("By");
+    const int Idx_Bz = m_Idx.at("Bz");
+    const int Idx_Jx = m_Idx.at("Jx");
+    const int Idx_Jy = m_Idx.at("Jy");
+    const int Idx_Jz = m_Idx.at("Jz");
+
+    // Index -1 will not be used (invalid value)
+    const int Idx_rho_old = update_with_rho ? m_Idx.at("rho_old") : -1;
+    const int Idx_rho_new = update_with_rho ? m_Idx.at("rho_new") : -1;
+
+    const int n_fields = m_n_fields;
 
     // Loop over boxes
     for (amrex::MFIter mfi(f.fields); mfi.isValid(); ++mfi){
@@ -80,20 +124,18 @@ PsatdAlgorithmRZ::pushSpectralFields(SpectralFieldDataRZ & f)
         amrex::ParallelFor(bx, modes,
         [=] AMREX_GPU_DEVICE(int i, int j, int k, int mode) noexcept
         {
-
             // All of the fields of each mode are grouped together
-            using Idx = SpectralFieldIndex;
-            auto const Ep_m = Idx::Ex + Idx::n_fields*mode;
-            auto const Em_m = Idx::Ey + Idx::n_fields*mode;
-            auto const Ez_m = Idx::Ez + Idx::n_fields*mode;
-            auto const Bp_m = Idx::Bx + Idx::n_fields*mode;
-            auto const Bm_m = Idx::By + Idx::n_fields*mode;
-            auto const Bz_m = Idx::Bz + Idx::n_fields*mode;
-            auto const Jp_m = Idx::Jx + Idx::n_fields*mode;
-            auto const Jm_m = Idx::Jy + Idx::n_fields*mode;
-            auto const Jz_m = Idx::Jz + Idx::n_fields*mode;
-            auto const rho_old_m = Idx::rho_old + Idx::n_fields*mode;
-            auto const rho_new_m = Idx::rho_new + Idx::n_fields*mode;
+            auto const Ep_m = Idx_Ex + n_fields*mode;
+            auto const Em_m = Idx_Ey + n_fields*mode;
+            auto const Ez_m = Idx_Ez + n_fields*mode;
+            auto const Bp_m = Idx_Bx + n_fields*mode;
+            auto const Bm_m = Idx_By + n_fields*mode;
+            auto const Bz_m = Idx_Bz + n_fields*mode;
+            auto const Jp_m = Idx_Jx + n_fields*mode;
+            auto const Jm_m = Idx_Jy + n_fields*mode;
+            auto const Jz_m = Idx_Jz + n_fields*mode;
+            auto const rho_old_m = Idx_rho_old + n_fields*mode;
+            auto const rho_new_m = Idx_rho_new + n_fields*mode;
 
             // Record old values of the fields to be updated
             Complex const Ep_old = fields(i,j,k,Ep_m);
@@ -223,15 +265,21 @@ PsatdAlgorithmRZ::CurrentCorrection (const int lev,
     // Profiling
     WARPX_PROFILE( "PsatdAlgorithmRZ::CurrentCorrection" );
 
-    using Idx = SpectralFieldIndex;
+    int Idx_Jx = m_Idx.at("Jx");
+    int Idx_Jy = m_Idx.at("Jy");
+    int Idx_Jz = m_Idx.at("Jz");
+    int Idx_rho_old = m_Idx.at("rho_old");
+    int Idx_rho_new = m_Idx.at("rho_new");
+
+    const int n_fields = m_n_fields;
 
     // Forward Fourier transform of J and rho
     field_data.ForwardTransform( lev,
-                                 *current[0], Idx::Jx,
-                                 *current[1], Idx::Jy);
-    field_data.ForwardTransform( lev, *current[2], Idx::Jz, 0);
-    field_data.ForwardTransform( lev, *rho, Idx::rho_old, 0 );
-    field_data.ForwardTransform( lev, *rho, Idx::rho_new, 1 );
+                                 *current[0], Idx_Jx,
+                                 *current[1], Idx_Jy);
+    field_data.ForwardTransform( lev, *current[2], Idx_Jz, 0);
+    field_data.ForwardTransform( lev, *rho, Idx_rho_old, 0 );
+    field_data.ForwardTransform( lev, *rho, Idx_rho_new, 1 );
 
     // Loop over boxes
     for (amrex::MFIter mfi(field_data.fields); mfi.isValid(); ++mfi){
@@ -256,11 +304,11 @@ PsatdAlgorithmRZ::CurrentCorrection (const int lev,
         [=] AMREX_GPU_DEVICE(int i, int j, int k, int mode) noexcept
         {
             // All of the fields of each mode are grouped together
-            auto const Jp_m = Idx::Jx + Idx::n_fields*mode;
-            auto const Jm_m = Idx::Jy + Idx::n_fields*mode;
-            auto const Jz_m = Idx::Jz + Idx::n_fields*mode;
-            auto const rho_old_m = Idx::rho_old + Idx::n_fields*mode;
-            auto const rho_new_m = Idx::rho_new + Idx::n_fields*mode;
+            auto const Jp_m = Idx_Jx + n_fields*mode;
+            auto const Jm_m = Idx_Jy + n_fields*mode;
+            auto const Jz_m = Idx_Jz + n_fields*mode;
+            auto const rho_old_m = Idx_rho_old + n_fields*mode;
+            auto const rho_new_m = Idx_rho_new + n_fields*mode;
 
             // Shortcuts for the values of J and rho
             Complex const Jp = fields(i,j,k,Jp_m);
@@ -292,10 +340,10 @@ PsatdAlgorithmRZ::CurrentCorrection (const int lev,
 
     // Backward Fourier transform of J
     field_data.BackwardTransform( lev,
-                                  *current[0], Idx::Jx,
-                                  *current[1], Idx::Jy);
+                                  *current[0], Idx_Jx,
+                                  *current[1], Idx_Jy);
     field_data.BackwardTransform( lev,
-                                  *current[2], Idx::Jz, 0 );
+                                  *current[2], Idx_Jz, 0 );
 }
 
 void

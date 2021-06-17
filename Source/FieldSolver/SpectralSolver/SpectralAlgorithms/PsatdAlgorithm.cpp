@@ -79,12 +79,12 @@ PsatdAlgorithm::PsatdAlgorithm(
         if (update_with_rho)
         {
             // E (3x), B (3x), J (3x), div(E) (1x), rho (2x), <E> (3x), <B> (3x)
-            n_fields = 18;
+            m_n_fields = 18;
         }
         else
         {
             // E (3x), B (3x), J (3x), div(E) (1x), <E> (3x), <B> (3x)
-            n_fields = 16;
+            m_n_fields = 16;
         }
     }
     else
@@ -92,12 +92,12 @@ PsatdAlgorithm::PsatdAlgorithm(
         if (update_with_rho)
         {
             // E (3x), B (3x), J (3x), div(E) (1x), rho (2x)
-            n_fields = 12;
+            m_n_fields = 12;
         }
         else
         {
             // E (3x), B (3x), J (3x), div(E) (1x)
-            n_fields = 10;
+            m_n_fields = 10;
         }
     }
 

@@ -56,8 +56,7 @@ SpectralSolverRZ::SpectralSolverRZ (const int lev,
 
     // - Initialize arrays for fields in spectral space + FFT plans
     field_data = SpectralFieldDataRZ(lev, realspace_ba, k_space, dm,
-                                     algorithm->getRequiredNumberOfFields(),
-                                     n_rz_azimuthal_modes);
+                                     algorithm->m_n_fields, n_rz_azimuthal_modes);
 }
 
 /* \brief Transform the component `i_comp` of MultiFab `field_mf`
