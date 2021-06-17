@@ -107,16 +107,16 @@ class SpectralSolver
             algorithm->VayDeposition(lev, field_data, current);
         }
 
+        // Defines field update equation in spectral space and the associated coefficients.
+        // SpectralBaseAlgorithm is a base class; this pointer is meant to point
+        // to an instance of a sub-class defining a specific algorithm
+        std::unique_ptr<SpectralBaseAlgorithm> algorithm;
+
     private:
         void ReadParameters ();
 
         // Store field in spectral space and perform the Fourier transforms
         SpectralFieldData field_data;
-
-        // Defines field update equation in spectral space and the associated coefficients.
-        // SpectralBaseAlgorithm is a base class; this pointer is meant to point
-        // to an instance of a sub-class defining a specific algorithm
-        std::unique_ptr<SpectralBaseAlgorithm> algorithm;
 };
 #endif // WARPX_USE_PSATD
 #endif // WARPX_SPECTRAL_SOLVER_H_

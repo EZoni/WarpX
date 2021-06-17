@@ -45,7 +45,7 @@ namespace {
         amrex::ignore_unused(Efield_avg, Bfield_avg);
 #endif
 
-        using Idx = SpectralAvgFieldIndex;
+        auto Idx = solver.algorithm->m_Idx;
 
         // Perform forward Fourier transform
 #ifdef WARPX_DIM_RZ
@@ -53,32 +53,32 @@ namespace {
                                 *Efield[0], Idx::Ex,
                                 *Efield[1], Idx::Ey);
 #else
-        solver.ForwardTransform(lev, *Efield[0], Idx::Ex);
-        solver.ForwardTransform(lev, *Efield[1], Idx::Ey);
+        solver.ForwardTransform(lev, *Efield[0], Idx.at("Ex"));
+        solver.ForwardTransform(lev, *Efield[1], Idx.at("Ey"));
 #endif
-        solver.ForwardTransform(lev, *Efield[2], Idx::Ez);
+        solver.ForwardTransform(lev, *Efield[2], Idx.at("Ez"));
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(lev,
                                 *Bfield[0], Idx::Bx,
                                 *Bfield[1], Idx::By);
 #else
-        solver.ForwardTransform(lev, *Bfield[0], Idx::Bx);
-        solver.ForwardTransform(lev, *Bfield[1], Idx::By);
+        solver.ForwardTransform(lev, *Bfield[0], Idx.at("Bx"));
+        solver.ForwardTransform(lev, *Bfield[1], Idx.at("By"));
 #endif
-        solver.ForwardTransform(lev, *Bfield[2], Idx::Bz);
+        solver.ForwardTransform(lev, *Bfield[2], Idx.at("Bz"));
 #ifdef WARPX_DIM_RZ
         solver.ForwardTransform(lev,
                                 *current[0], Idx::Jx,
                                 *current[1], Idx::Jy);
 #else
-        solver.ForwardTransform(lev, *current[0], Idx::Jx);
-        solver.ForwardTransform(lev, *current[1], Idx::Jy);
+        solver.ForwardTransform(lev, *current[0], Idx.at("Jx"));
+        solver.ForwardTransform(lev, *current[1], Idx.at("Jy"));
 #endif
-        solver.ForwardTransform(lev, *current[2], Idx::Jz);
+        solver.ForwardTransform(lev, *current[2], Idx.at("Jz"));
 
         if (rho) {
-            solver.ForwardTransform(lev, *rho, Idx::rho_old, 0);
-            solver.ForwardTransform(lev, *rho, Idx::rho_new, 1);
+            solver.ForwardTransform(lev, *rho, Idx.at("rho_old"), 0);
+            solver.ForwardTransform(lev, *rho, Idx.at("rho_new"), 1);
         }
 #ifdef WARPX_DIM_RZ
         if (WarpX::use_kspace_filter) {
@@ -95,29 +95,29 @@ namespace {
                                  *Efield[0], Idx::Ex,
                                  *Efield[1], Idx::Ey);
 #else
-        solver.BackwardTransform(lev, *Efield[0], Idx::Ex);
-        solver.BackwardTransform(lev, *Efield[1], Idx::Ey);
+        solver.BackwardTransform(lev, *Efield[0], Idx.at("Ex"));
+        solver.BackwardTransform(lev, *Efield[1], Idx.at("Ey"));
 #endif
-        solver.BackwardTransform(lev, *Efield[2], Idx::Ez);
+        solver.BackwardTransform(lev, *Efield[2], Idx.at("Ez"));
 #ifdef WARPX_DIM_RZ
         solver.BackwardTransform(lev,
                                  *Bfield[0], Idx::Bx,
                                  *Bfield[1], Idx::By);
 #else
-        solver.BackwardTransform(lev, *Bfield[0], Idx::Bx);
-        solver.BackwardTransform(lev, *Bfield[1], Idx::By);
+        solver.BackwardTransform(lev, *Bfield[0], Idx.at("Bx"));
+        solver.BackwardTransform(lev, *Bfield[1], Idx.at("By"));
 #endif
-        solver.BackwardTransform(lev, *Bfield[2], Idx::Bz);
+        solver.BackwardTransform(lev, *Bfield[2], Idx.at("Bz"));
 
 #ifndef WARPX_DIM_RZ
         if (WarpX::fft_do_time_averaging){
-            solver.BackwardTransform(lev, *Efield_avg[0], Idx::Ex_avg);
-            solver.BackwardTransform(lev, *Efield_avg[1], Idx::Ey_avg);
-            solver.BackwardTransform(lev, *Efield_avg[2], Idx::Ez_avg);
+            solver.BackwardTransform(lev, *Efield_avg[0], Idx.at("Ex_avg"));
+            solver.BackwardTransform(lev, *Efield_avg[1], Idx.at("Ey_avg"));
+            solver.BackwardTransform(lev, *Efield_avg[2], Idx.at("Ez_avg"));
 
-            solver.BackwardTransform(lev, *Bfield_avg[0], Idx::Bx_avg);
-            solver.BackwardTransform(lev, *Bfield_avg[1], Idx::By_avg);
-            solver.BackwardTransform(lev, *Bfield_avg[2], Idx::Bz_avg);
+            solver.BackwardTransform(lev, *Bfield_avg[0], Idx.at("Bx_avg"));
+            solver.BackwardTransform(lev, *Bfield_avg[1], Idx.at("By_avg"));
+            solver.BackwardTransform(lev, *Bfield_avg[2], Idx.at("Bz_avg"));
         }
 #endif
     }

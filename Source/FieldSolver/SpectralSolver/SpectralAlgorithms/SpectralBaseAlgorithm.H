@@ -12,6 +12,9 @@
 
 #include <AMReX.H>
 
+#include <string>
+#include <map>
+
 #if WARPX_USE_PSATD
 
 /* \brief Class that updates the field in spectral space
@@ -67,6 +70,9 @@ class SpectralBaseAlgorithm
                                    SpectralFieldData& field_data,
                                    const std::array<std::unique_ptr<amrex::MultiFab>,3>& Efield,
                                    amrex::MultiFab& divE );
+
+        int n_fields = 0;
+        std::map<std::string, int> m_Idx;
 
     protected: // Meant to be used in the subclasses
 
