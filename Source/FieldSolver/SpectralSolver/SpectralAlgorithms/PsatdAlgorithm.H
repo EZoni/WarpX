@@ -40,6 +40,7 @@ class PsatdAlgorithm : public SpectralBaseAlgorithm
             const bool nodal,
             const amrex::Array<amrex::Real,3>& v_galilean,
             const amrex::Real dt,
+            const bool current_correction,
             const bool update_with_rho,
             const bool time_averaging);
 

@@ -23,6 +23,7 @@ PsatdAlgorithm::PsatdAlgorithm(
     const bool nodal,
     const amrex::Array<amrex::Real,3>& v_galilean,
     const amrex::Real dt,
+    const bool current_correction,
     const bool update_with_rho,
     const bool time_averaging)
     // Initializer list
@@ -76,7 +77,7 @@ PsatdAlgorithm::PsatdAlgorithm(
 
     if (time_averaging)
     {
-        if (update_with_rho)
+        if (update_with_rho || current_correction)
         {
             // E (3x), B (3x), J (3x), div(E) (1x), rho (2x), <E> (3x), <B> (3x)
             m_n_fields = 18;
@@ -89,7 +90,7 @@ PsatdAlgorithm::PsatdAlgorithm(
     }
     else
     {
-        if (update_with_rho)
+        if (update_with_rho || current_correction)
         {
             // E (3x), B (3x), J (3x), div(E) (1x), rho (2x)
             m_n_fields = 12;
@@ -115,7 +116,7 @@ PsatdAlgorithm::PsatdAlgorithm(
 
     if (time_averaging)
     {
-        if (update_with_rho)
+        if (update_with_rho || current_correction)
         {
             m_Idx.insert(std::pair<std::string, int>("rho_old", c++));
             m_Idx.insert(std::pair<std::string, int>("rho_new", c++));
@@ -138,7 +139,7 @@ PsatdAlgorithm::PsatdAlgorithm(
     }
     else
     {
-        if (update_with_rho)
+        if (update_with_rho || current_correction)
         {
             m_Idx.insert(std::pair<std::string, int>("rho_old", c++));
             m_Idx.insert(std::pair<std::string, int>("rho_new", c++));

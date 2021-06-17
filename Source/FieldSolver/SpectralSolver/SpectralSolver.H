@@ -39,6 +39,7 @@ class SpectralSolver
                         const amrex::Real dt,
                         const bool pml=false,
                         const bool periodic_single_box=false,
+                        const bool current_correction = false,
                         const bool update_with_rho=false,
                         const bool fft_do_time_averaging=false,
                         const bool dive_cleaning = false,
