@@ -64,18 +64,18 @@
 #include <vector>
 #include <sstream>
 
-using namespace amrex;
+using namespace amrex::literals;
 
 void
-WarpX::PostProcessBaseGrids (BoxArray& ba0) const
+WarpX::PostProcessBaseGrids (amrex::BoxArray& ba0) const
 {
     if (numprocs != 0) {
-        const Box& dom = Geom(0).Domain();
-        const IntVect& domlo = dom.smallEnd();
-        const IntVect& domlen = dom.size();
-        const IntVect sz = domlen / numprocs;
-        const IntVect extra = domlen - sz*numprocs;
-        BoxList bl;
+        const amrex::Box& dom = Geom(0).Domain();
+        const amrex::IntVect& domlo = dom.smallEnd();
+        const amrex::IntVect& domlen = dom.size();
+        const amrex::IntVect sz = domlen / numprocs;
+        const amrex::IntVect extra = domlen - sz*numprocs;
+        amrex::BoxList bl;
 #if (AMREX_SPACEDIM == 3)
         for (int k = 0; k < numprocs[2]; ++k) {
             // The first extra[2] blocks get one extra cell with a total of
@@ -98,10 +98,10 @@ WarpX::PostProcessBaseGrids (BoxArray& ba0) const
                     int ihi = (i < extra[0]) ? ilo+(sz[0]+1)-1 : ilo+sz[0]-1;
                     ilo += domlo[0];
                     ihi += domlo[0];
-                    bl.push_back(Box(IntVect(AMREX_D_DECL(ilo,jlo,klo)),
-                                     IntVect(AMREX_D_DECL(ihi,jhi,khi))));
+                    bl.push_back(amrex::Box(amrex::IntVect(AMREX_D_DECL(ilo,jlo,klo)),
+                                     amrex::IntVect(AMREX_D_DECL(ihi,jhi,khi))));
         AMREX_D_TERM(},},})
-        ba0 = BoxArray(std::move(bl));
+        ba0 = amrex::BoxArray(std::move(bl));
     }
 }
 
@@ -109,9 +109,9 @@ void
 WarpX::InitData ()
 {
     WARPX_PROFILE("WarpX::InitData()");
-    Print() << "WarpX (" << WarpX::Version() << ")\n";
+    amrex::Print() << "WarpX (" << WarpX::Version() << ")\n";
 #ifdef WARPX_QED
-    Print() << "PICSAR (" << WarpX::PicsarVersion() << ")\n";
+    amrex::Print() << "PICSAR (" << WarpX::PicsarVersion() << ")\n";
 #endif
 
     if (restart_chkfile.empty())
@@ -147,7 +147,7 @@ WarpX::InitData ()
 
     InitDiagnostics();
 
-    if (ParallelDescriptor::IOProcessor()) {
+    if (amrex::ParallelDescriptor::IOProcessor()) {
         std::cout << "\nGrids Summary:\n";
         printGridSummary(std::cout, 0, finestLevel());
     }
@@ -180,14 +180,14 @@ void
 WarpX::InitDiagnostics () {
     multi_diags->InitData();
     if (do_back_transformed_diagnostics) {
-        const Real* current_lo = geom[0].ProbLo();
-        const Real* current_hi = geom[0].ProbHi();
-        Real dt_boost = dt[0];
-        Real boosted_moving_window_v = (moving_window_v - beta_boost*PhysConst::c)/(1 - beta_boost*moving_window_v/PhysConst::c);
+        const amrex::Real* current_lo = geom[0].ProbLo();
+        const amrex::Real* current_hi = geom[0].ProbHi();
+        amrex::Real dt_boost = dt[0];
+        amrex::Real boosted_moving_window_v = (moving_window_v - beta_boost*PhysConst::c)/(1 - beta_boost*moving_window_v/PhysConst::c);
         // Find the positions of the lab-frame box that corresponds to the boosted-frame box at t=0
-        Real zmin_lab = static_cast<Real>(
+        amrex::Real zmin_lab = static_cast<amrex::Real>(
             (current_lo[moving_window_dir] - boosted_moving_window_v*t_new[0])/( (1.+beta_boost)*gamma_boost ));
-        Real zmax_lab = static_cast<Real>(
+        amrex::Real zmax_lab = static_cast<amrex::Real>(
             (current_hi[moving_window_dir] - boosted_moving_window_v*t_new[0])/( (1.+beta_boost)*gamma_boost ));
         myBFD = std::make_unique<BackTransformedDiagnostic>(
                                                zmin_lab,
@@ -207,7 +207,7 @@ WarpX::InitDiagnostics () {
 void
 WarpX::InitFromScratch ()
 {
-    const Real time = 0.0;
+    const amrex::Real time = 0.0;
 
     AmrCore::InitFromScratch(time);  // This will call MakeNewLevelFromScratch
 
@@ -334,15 +334,15 @@ WarpX::computeMaxStepBoostAccelerator(const amrex::Geometry& a_geom){
 
     // Lower end of the simulation domain. All quantities are given in boosted
     // frame except zmax_plasma_to_compute_max_step.
-    const Real zmin_domain_boost = a_geom.ProbLo(AMREX_SPACEDIM-1);
+    const amrex::Real zmin_domain_boost = a_geom.ProbLo(AMREX_SPACEDIM-1);
     // End of the plasma: Transform input argument
     // zmax_plasma_to_compute_max_step to boosted frame.
-    const Real len_plasma_boost = zmax_plasma_to_compute_max_step/gamma_boost;
+    const amrex::Real len_plasma_boost = zmax_plasma_to_compute_max_step/gamma_boost;
     // Plasma velocity
-    const Real v_plasma_boost = -beta_boost * PhysConst::c;
+    const amrex::Real v_plasma_boost = -beta_boost * PhysConst::c;
     // Get time at which the lower end of the simulation domain passes the
     // upper end of the plasma (in the z direction).
-    const Real interaction_time_boost = (len_plasma_boost-zmin_domain_boost)/
+    const amrex::Real interaction_time_boost = (len_plasma_boost-zmin_domain_boost)/
         (moving_window_v-v_plasma_boost);
     // Divide by dt, and update value of max_step.
     int computed_max_step;
@@ -353,8 +353,8 @@ WarpX::computeMaxStepBoostAccelerator(const amrex::Geometry& a_geom){
             static_cast<int>(interaction_time_boost/dt[maxLevel()]);
     }
     max_step = computed_max_step;
-    Print()<<"max_step computed in computeMaxStepBoostAccelerator: "
-           <<computed_max_step<<std::endl;
+    amrex::Print()<<"max_step computed in computeMaxStepBoostAccelerator: "
+                  <<computed_max_step<<std::endl;
 }
 
 void
@@ -365,8 +365,8 @@ WarpX::InitNCICorrector ()
     {
         for (int lev = 0; lev <= max_level; ++lev)
         {
-            const Geometry& gm = Geom(lev);
-            const Real* dx = gm.CellSize();
+            const amrex::Geometry& gm = Geom(lev);
+            const amrex::Real* dx = gm.CellSize();
             amrex::Real dz, cdtodz;
             if (AMREX_SPACEDIM == 3){
                 dz = dx[2];
@@ -409,10 +409,10 @@ WarpX::PostRestart ()
 
 
 void
-WarpX::InitLevelData (int lev, Real /*time*/)
+WarpX::InitLevelData (int lev, amrex::Real /*time*/)
 {
 
-    ParmParse pp_warpx("warpx");
+    amrex::ParmParse pp_warpx("warpx");
 
     // default values of E_external_grid and B_external_grid
     // are used to set the E and B field when "constant" or
@@ -441,7 +441,7 @@ WarpX::InitLevelData (int lev, Real /*time*/)
 
     // initialize the averaged fields only if the averaged algorithm
     // is activated ('psatd.do_time_averaging=1')
-    ParmParse pp_psatd("psatd");
+    amrex::ParmParse pp_psatd("psatd");
     pp_psatd.query("do_time_averaging", fft_do_time_averaging );
 
     for (int i = 0; i < 3; ++i) {
@@ -632,19 +632,19 @@ WarpX::InitLevelData (int lev, Real /*time*/)
 
 void
 WarpX::InitializeExternalFieldsOnGridUsingParser (
-       MultiFab *mfx, MultiFab *mfy, MultiFab *mfz,
-       ParserExecutor<3> const& xfield_parser, ParserExecutor<3> const& yfield_parser,
-       ParserExecutor<3> const& zfield_parser,
+       amrex::MultiFab *mfx, amrex::MultiFab *mfy, amrex::MultiFab *mfz,
+       amrex::ParserExecutor<3> const& xfield_parser, amrex::ParserExecutor<3> const& yfield_parser,
+       amrex::ParserExecutor<3> const& zfield_parser,
        std::array< std::unique_ptr<amrex::MultiFab>, 3 > const& geom_data,
        const int lev)
 {
 
     const auto dx_lev = geom[lev].CellSizeArray();
-    const RealBox& real_box = geom[lev].ProbDomain();
+    const amrex::RealBox& real_box = geom[lev].ProbDomain();
     amrex::IntVect x_nodal_flag = mfx->ixType().toIntVect();
     amrex::IntVect y_nodal_flag = mfy->ixType().toIntVect();
     amrex::IntVect z_nodal_flag = mfz->ixType().toIntVect();
-    for ( MFIter mfi(*mfx, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+    for ( amrex::MFIter mfi(*mfx, amrex::TilingIfNotGPU()); mfi.isValid(); ++mfi)
     {
        const amrex::Box& tbx = mfi.tilebox( x_nodal_flag, mfx->nGrowVect() );
        const amrex::Box& tby = mfi.tilebox( y_nodal_flag, mfy->nGrowVect() );
@@ -755,14 +755,14 @@ WarpX::PerformanceHints ()
     for (int ilev = 0; ilev <= finestLevel(); ++ilev) {
         total_nboxes += boxArray(ilev).size();
     }
-    if (ParallelDescriptor::NProcs() > total_nboxes){
+    if (amrex::ParallelDescriptor::NProcs() > total_nboxes){
         std::stringstream warnMsg;
         warnMsg << "Too many resources / too little work!\n"
             << "  It looks like you requested more compute resources than "
             << "there are total number of boxes of cells available ("
             << total_nboxes << "). "
-            << "You started with (" << ParallelDescriptor::NProcs()
-            << ") MPI ranks, so (" << ParallelDescriptor::NProcs() - total_nboxes
+            << "You started with (" << amrex::ParallelDescriptor::NProcs()
+            << ") MPI ranks, so (" << amrex::ParallelDescriptor::NProcs() - total_nboxes
             << ") rank(s) will have no work.\n"
 #ifdef AMREX_USE_GPU
             << "  On GPUs, consider using 1-8 boxes per GPU that together fill "

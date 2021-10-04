@@ -66,7 +66,7 @@ struct InjectorPositionRegular
     getPositionUnitBox (int const i_part, int const ref_fac,
                         amrex::RandomEngine const&) const noexcept
     {
-        using namespace amrex;
+        using namespace amrex::literals;
 
         int const nx = ref_fac*ppc.x;
         int const ny = ref_fac*ppc.y;
@@ -78,7 +78,7 @@ struct InjectorPositionRegular
         int const ix_part = i_part / (ny*nz);  // written this way backward compatibility
         int const iz_part = (i_part-ix_part*(ny*nz)) / ny;
         int const iy_part = (i_part-ix_part*(ny*nz)) - ny*iz_part;
-        return XDim3{
+        return amrex::XDim3{
             (0.5_rt + ix_part) / nx,
             (0.5_rt + iy_part) / ny,
             (0.5_rt + iz_part) / nz

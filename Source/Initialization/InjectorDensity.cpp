@@ -17,8 +17,6 @@
 #include <cctype>
 #include <vector>
 
-using namespace amrex;
-
 void InjectorDensity::clear ()
 {
     switch (type)
@@ -46,7 +44,7 @@ InjectorDensityPredefined::InjectorDensityPredefined (
     std::string const& a_species_name) noexcept
     : profile(Profile::null)
 {
-    ParmParse pp_species_name(a_species_name);
+    amrex::ParmParse pp_species_name(a_species_name);
 
     std::vector<amrex::Real> v;
     // Read parameters for the predefined plasma profile.

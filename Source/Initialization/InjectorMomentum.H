@@ -207,14 +207,14 @@ struct InjectorMomentumBoltzmann
     amrex::XDim3
     getBulkMomentum (amrex::Real const x, amrex::Real const y, amrex::Real const z) const noexcept
     {
-        using namespace amrex;
-        Real u[3];
+        using namespace amrex::literals;
+        amrex::Real u[3];
         for (int idim = 0; idim < 3; ++idim) u[idim] = 0.0_rt;
-        const Real beta = velocity(x,y,z);
+        const amrex::Real beta = velocity(x,y,z);
         int const dir = velocity.direction();
-        const Real gamma = static_cast<amrex::Real>(1./sqrt(1+beta*beta));
+        const amrex::Real gamma = static_cast<amrex::Real>(1./sqrt(1+beta*beta));
         u[dir] = gamma*beta;
-        return XDim3 {u[0],u[1],u[2]};
+        return amrex::XDim3 {u[0],u[1],u[2]};
     }
 
 private:
@@ -307,14 +307,14 @@ struct InjectorMomentumJuttner
     amrex::XDim3
     getBulkMomentum (amrex::Real const x, amrex::Real const y, amrex::Real const z) const noexcept
     {
-        using namespace amrex;
-        Real u[3];
+        using namespace amrex::literals;
+        amrex::Real u[3];
         for (int idim = 0; idim < 3; ++idim) u[idim] = 0.0_rt;
-        Real const beta = velocity(x,y,z);
+        amrex::Real const beta = velocity(x,y,z);
         int const dir = velocity.direction();
-        const Real gamma = static_cast<Real>(1./sqrt(1.+beta*beta));
+        const amrex::Real gamma = static_cast<amrex::Real>(1./sqrt(1.+beta*beta));
         u[dir] = gamma*beta;
-        return XDim3 {u[0],u[1],u[2]};
+        return amrex::XDim3 {u[0],u[1],u[2]};
     }
 
 private:

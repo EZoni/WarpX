@@ -50,14 +50,14 @@
 #include <ostream>
 #include <vector>
 
-using namespace amrex;
+using namespace amrex::literals;
 
 void
 WarpX::Evolve (int numsteps)
 {
     WARPX_PROFILE("WarpX::Evolve()");
 
-    Real cur_time = t_new[0];
+    amrex::Real cur_time = t_new[0];
 
     int numsteps_max;
     if (numsteps < 0) {  // Note that the default argument is numsteps = -1
@@ -68,13 +68,13 @@ WarpX::Evolve (int numsteps)
 
     bool early_params_checked = false; // check typos in inputs after step 1
 
-    static Real evolve_time = 0;
+    static amrex::Real evolve_time = 0;
 
     const int step_begin = istep[0];
     for (int step = istep[0]; step < numsteps_max && cur_time < stop_time; ++step)
     {
         WARPX_PROFILE("WarpX::Evolve::step");
-        Real evolve_time_beg_step = amrex::second();
+        amrex::Real evolve_time_beg_step = amrex::second();
 
         multi_diags->NewIteration();
 
@@ -243,7 +243,7 @@ WarpX::Evolve (int numsteps)
         ShiftGalileanBoundary();
 
         if (do_back_transformed_diagnostics) {
-            std::unique_ptr<MultiFab> cell_centered_data = nullptr;
+            std::unique_ptr<amrex::MultiFab> cell_centered_data = nullptr;
             if (WarpX::do_back_transformed_fields) {
                 cell_centered_data = GetCellCenteredData();
             }
@@ -346,7 +346,7 @@ WarpX::Evolve (int numsteps)
         }
 
         // create ending time stamp for calculating elapsed time each iteration
-        Real evolve_time_end_step = amrex::second();
+        amrex::Real evolve_time_end_step = amrex::second();
         evolve_time += evolve_time_end_step - evolve_time_beg_step;
 
         if (verbose) {
@@ -376,7 +376,7 @@ WarpX::Evolve (int numsteps)
 *  for the field advance and particle pusher.
 */
 void
-WarpX::OneStep_nosub (Real cur_time)
+WarpX::OneStep_nosub (amrex::Real cur_time)
 {
     WARPX_PROFILE("WarpX::OneStep_nosub()");
 
@@ -652,7 +652,7 @@ WarpX::OneStep_multiJ (const amrex::Real cur_time)
 *
 */
 void
-WarpX::OneStep_sub1 (Real curtime)
+WarpX::OneStep_sub1 (amrex::Real curtime)
 {
     if( do_electrostatic != ElectrostaticSolverAlgo::None )
     {
@@ -786,8 +786,8 @@ WarpX::OneStep_sub1 (Real curtime)
             // Exchance guard cells of PMLs only (0 cells are exchanged for the
             // regular B field MultiFab). This is required as B and F have just been
             // evolved.
-            FillBoundaryB(coarse_lev, PatchType::fine, IntVect::TheZeroVector());
-            FillBoundaryF(coarse_lev, PatchType::fine, IntVect::TheZeroVector());
+            FillBoundaryB(coarse_lev, PatchType::fine, amrex::IntVect::TheZeroVector());
+            FillBoundaryF(coarse_lev, PatchType::fine, amrex::IntVect::TheZeroVector());
         }
         DampPML(coarse_lev, PatchType::fine);
         if ( safe_guard_cells )
@@ -885,12 +885,12 @@ WarpX::PushParticlesandDepose (int lev, amrex::Real cur_time, DtType a_dt_type, 
  * The mirror normal direction has to be parallel to the z axis.
  */
 void
-WarpX::applyMirrors(Real time){
+WarpX::applyMirrors(amrex::Real time){
     // Loop over the mirrors
     for(int i_mirror=0; i_mirror<num_mirrors; ++i_mirror){
         // Get mirror properties (lower and upper z bounds)
-        Real z_min = mirror_z[i_mirror];
-        Real z_max_tmp = z_min + mirror_z_width[i_mirror];
+        amrex::Real z_min = mirror_z[i_mirror];
+        amrex::Real z_max_tmp = z_min + mirror_z_width[i_mirror];
         // Boost quantities for boosted frame simulations
         if (gamma_boost>1){
             z_min = z_min/gamma_boost - PhysConst::c*beta_boost*time;
@@ -900,16 +900,16 @@ WarpX::applyMirrors(Real time){
         for(int lev=0; lev<=finest_level; lev++){
             // Make sure that the mirror contains at least
             // mirror_z_npoints[i_mirror] cells
-            Real dz = WarpX::CellSize(lev)[2];
-            Real z_max = std::max(z_max_tmp,
+            amrex::Real dz = WarpX::CellSize(lev)[2];
+            amrex::Real z_max = std::max(z_max_tmp,
                                   z_min+mirror_z_npoints[i_mirror]*dz);
             // Get fine patch field MultiFabs
-            MultiFab& Ex = *Efield_fp[lev][0].get();
-            MultiFab& Ey = *Efield_fp[lev][1].get();
-            MultiFab& Ez = *Efield_fp[lev][2].get();
-            MultiFab& Bx = *Bfield_fp[lev][0].get();
-            MultiFab& By = *Bfield_fp[lev][1].get();
-            MultiFab& Bz = *Bfield_fp[lev][2].get();
+            amrex::MultiFab& Ex = *Efield_fp[lev][0].get();
+            amrex::MultiFab& Ey = *Efield_fp[lev][1].get();
+            amrex::MultiFab& Ez = *Efield_fp[lev][2].get();
+            amrex::MultiFab& Bx = *Bfield_fp[lev][0].get();
+            amrex::MultiFab& By = *Bfield_fp[lev][1].get();
+            amrex::MultiFab& Bz = *Bfield_fp[lev][2].get();
             // Set each field to zero between z_min and z_max
             NullifyMF(Ex, lev, z_min, z_max);
             NullifyMF(Ey, lev, z_min, z_max);
@@ -919,12 +919,12 @@ WarpX::applyMirrors(Real time){
             NullifyMF(Bz, lev, z_min, z_max);
             if (lev>0){
                 // Get coarse patch field MultiFabs
-                MultiFab& cEx = *Efield_cp[lev][0].get();
-                MultiFab& cEy = *Efield_cp[lev][1].get();
-                MultiFab& cEz = *Efield_cp[lev][2].get();
-                MultiFab& cBx = *Bfield_cp[lev][0].get();
-                MultiFab& cBy = *Bfield_cp[lev][1].get();
-                MultiFab& cBz = *Bfield_cp[lev][2].get();
+                amrex::MultiFab& cEx = *Efield_cp[lev][0].get();
+                amrex::MultiFab& cEy = *Efield_cp[lev][1].get();
+                amrex::MultiFab& cEz = *Efield_cp[lev][2].get();
+                amrex::MultiFab& cBx = *Bfield_cp[lev][0].get();
+                amrex::MultiFab& cBy = *Bfield_cp[lev][1].get();
+                amrex::MultiFab& cBz = *Bfield_cp[lev][2].get();
                 // Set each field to zero between z_min and z_max
                 NullifyMF(cEx, lev, z_min, z_max);
                 NullifyMF(cEy, lev, z_min, z_max);

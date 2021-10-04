@@ -7,8 +7,6 @@
  */
 #include "InjectorMomentum.H"
 
-using namespace amrex;
-
 void InjectorMomentum::clear ()
 {
     switch (type)
