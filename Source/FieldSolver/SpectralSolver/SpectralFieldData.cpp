@@ -233,7 +233,7 @@ SpectralFieldData::ForwardTransform (const int lev,
             } else {
                 realspace_bx = mf[mfi].box(); // Keep guard cells
             }
-            realspace_bx.enclosedCells(); // Discard last point in nodal direction
+            //realspace_bx.enclosedCells(); // Discard last point in nodal direction
             AMREX_ALWAYS_ASSERT( realspace_bx.contains(tmpRealField[mfi].box()) );
             Array4<const Real> mf_arr = mf[mfi].array();
             Array4<Real> tmp_arr = tmpRealField[mfi].array();
@@ -405,11 +405,12 @@ SpectralFieldData::BackwardTransform (const int lev,
                 // this is necessary in order to get the correct value along a nodal direction,
                 // because the last point along a nodal direction is always discarded when FFTs
                 // are computed, as the real-space box is always cell-centered.
-                const int ii = (i == lo_i + ni - si) ? lo_i : i;
-                const int jj = (j == lo_j + nj - sj) ? lo_j : j;
-                const int kk = (k == lo_k + nk - sk) ? lo_k : k;
+                //const int ii = (i == lo_i + ni - si) ? lo_i : i;
+                //const int jj = (j == lo_j + nj - sj) ? lo_j : j;
+                //const int kk = (k == lo_k + nk - sk) ? lo_k : k;
                 // Copy and normalize field
-                mf_arr(i,j,k,i_comp) = inv_N * tmp_arr(ii,jj,kk);
+                //mf_arr(i,j,k,i_comp) = inv_N * tmp_arr(ii,jj,kk);
+                mf_arr(i,j,k,i_comp) = inv_N * tmp_arr(i,j,k);
             });
         }
 

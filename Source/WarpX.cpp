@@ -1707,7 +1707,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
         }
         // Get the cell-centered box
         BoxArray realspace_ba = ba;  // Copy box
-        realspace_ba.enclosedCells(); // Make it cell-centered
+        //realspace_ba.enclosedCells(); // Make it cell-centered
         // Define spectral solver
 #   ifdef WARPX_DIM_RZ
         if ( fft_periodic_single_box == false ) {
@@ -1849,7 +1849,7 @@ WarpX::AllocLevelMFs (int lev, const BoxArray& ba, const DistributionMapping& dm
 
             // Get the cell-centered box, with guard cells
             BoxArray c_realspace_ba = cba;// Copy box
-            c_realspace_ba.enclosedCells(); // Make it cell-centered
+            //c_realspace_ba.enclosedCells(); // Make it cell-centered
             // Define spectral solver
 #ifdef WARPX_DIM_RZ
             c_realspace_ba.grow(1, ngE[1]); // add guard cells only in z
