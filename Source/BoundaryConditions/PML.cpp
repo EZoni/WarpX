@@ -1029,7 +1029,7 @@ PML::Exchange (MultiFab& pml, MultiFab& reg, const Geometry& geom,
     const IntVect& ngr = reg.nGrowVect();
     const IntVect& ngp = pml.nGrowVect();
     const int ncp = pml.nComp();
-    const auto& period = geom.periodicity();
+    const amrex::Periodicity& period = geom.periodicity();
 
     // Create temporary MultiFab to copy to and from the PML
     MultiFab tmpregmf(reg.boxArray(), reg.DistributionMap(), ncp, ngr);
@@ -1062,8 +1062,8 @@ PML::Exchange (MultiFab& pml, MultiFab& reg, const Geometry& geom,
             {
                 const FArrayBox& src = tmpregmf[mfi];
                 FArrayBox& dst = reg[mfi];
-                const auto srcarr = src.array();
-                auto dstarr = dst.array();
+                const amrex::Array4<const amrex::Real> srcarr = src.array();
+                amrex::Array4<amrex::Real> dstarr = dst.array();
                 const BoxList& bl = amrex::boxDiff(dst.box(), mfi.validbox());
                 // boxDiff avoids the outermost valid cell
                 for (const Box& bx : bl) {
@@ -1097,7 +1097,7 @@ void
 PML::CopyToPML (MultiFab& pml, MultiFab& reg, const Geometry& geom)
 {
   const IntVect& ngp = pml.nGrowVect();
-  const auto& period = geom.periodicity();
+  const amrex::Periodicity& period = geom.periodicity();
 
   WarpXCommUtil::ParallelCopy(pml, reg, 0, 0, 1, IntVect(0), ngp, period);
 }
@@ -1123,13 +1123,13 @@ PML::FillBoundaryE (PatchType patch_type)
 {
     if (patch_type == PatchType::fine && pml_E_fp[0] && pml_E_fp[0]->nGrowVect().max() > 0)
     {
-        const auto& period = m_geom->periodicity();
+        const amrex::Periodicity& period = m_geom->periodicity();
         Vector<MultiFab*> mf{pml_E_fp[0].get(),pml_E_fp[1].get(),pml_E_fp[2].get()};
         WarpXCommUtil::FillBoundary(mf, period);
     }
     else if (patch_type == PatchType::coarse && pml_E_cp[0] && pml_E_cp[0]->nGrowVect().max() > 0)
     {
-        const auto& period = m_cgeom->periodicity();
+        const amrex::Periodicity& period = m_cgeom->periodicity();
         Vector<MultiFab*> mf{pml_E_cp[0].get(),pml_E_cp[1].get(),pml_E_cp[2].get()};
         WarpXCommUtil::FillBoundary(mf, period);
     }
@@ -1147,13 +1147,13 @@ PML::FillBoundaryB (PatchType patch_type)
 {
     if (patch_type == PatchType::fine && pml_B_fp[0])
     {
-        const auto& period = m_geom->periodicity();
+        const amrex::Periodicity& period = m_geom->periodicity();
         Vector<MultiFab*> mf{pml_B_fp[0].get(),pml_B_fp[1].get(),pml_B_fp[2].get()};
         WarpXCommUtil::FillBoundary(mf, period);
     }
     else if (patch_type == PatchType::coarse && pml_B_cp[0])
     {
-        const auto& period = m_cgeom->periodicity();
+        const amrex::Periodicity& period = m_cgeom->periodicity();
         Vector<MultiFab*> mf{pml_B_cp[0].get(),pml_B_cp[1].get(),pml_B_cp[2].get()};
         WarpXCommUtil::FillBoundary(mf, period);
     }
@@ -1171,12 +1171,12 @@ PML::FillBoundaryF (PatchType patch_type)
 {
     if (patch_type == PatchType::fine && pml_F_fp && pml_F_fp->nGrowVect().max() > 0)
     {
-        const auto& period = m_geom->periodicity();
+        const amrex::Periodicity& period = m_geom->periodicity();
         WarpXCommUtil::FillBoundary(*pml_F_fp, period);
     }
     else if (patch_type == PatchType::coarse && pml_F_cp && pml_F_cp->nGrowVect().max() > 0)
     {
-        const auto& period = m_cgeom->periodicity();
+        const amrex::Periodicity& period = m_cgeom->periodicity();
         WarpXCommUtil::FillBoundary(*pml_F_cp, period);
     }
 }
@@ -1193,12 +1193,12 @@ PML::FillBoundaryG (PatchType patch_type)
 {
     if (patch_type == PatchType::fine && pml_G_fp && pml_G_fp->nGrowVect().max() > 0)
     {
-        const auto& period = m_geom->periodicity();
+        const amrex::Periodicity& period = m_geom->periodicity();
         WarpXCommUtil::FillBoundary(*pml_G_fp, period);
     }
     else if (patch_type == PatchType::coarse && pml_G_cp && pml_G_cp->nGrowVect().max() > 0)
     {
-        const auto& period = m_cgeom->periodicity();
+        const amrex::Periodicity& period = m_cgeom->periodicity();
         WarpXCommUtil::FillBoundary(*pml_G_cp, period);
     }
 }

@@ -63,12 +63,12 @@ WarpX::DampPML (int lev, PatchType patch_type)
 
     if (pml[lev]->ok())
     {
-        const auto& pml_E = (patch_type == PatchType::fine) ? pml[lev]->GetE_fp() : pml[lev]->GetE_cp();
-        const auto& pml_B = (patch_type == PatchType::fine) ? pml[lev]->GetB_fp() : pml[lev]->GetB_cp();
-        const auto& pml_F = (patch_type == PatchType::fine) ? pml[lev]->GetF_fp() : pml[lev]->GetF_cp();
-        const auto& pml_G = (patch_type == PatchType::fine) ? pml[lev]->GetG_fp() : pml[lev]->GetG_cp();
-        const auto& sigba = (patch_type == PatchType::fine) ? pml[lev]->GetMultiSigmaBox_fp()
-                                                            : pml[lev]->GetMultiSigmaBox_cp();
+        std::array<amrex::MultiFab*,3> const& pml_E = (patch_type == PatchType::fine) ? pml[lev]->GetE_fp() : pml[lev]->GetE_cp();
+        std::array<amrex::MultiFab*,3> const& pml_B = (patch_type == PatchType::fine) ? pml[lev]->GetB_fp() : pml[lev]->GetB_cp();
+        amrex::MultiFab* const pml_F = (patch_type == PatchType::fine) ? pml[lev]->GetF_fp() : pml[lev]->GetF_cp();
+        amrex::MultiFab* const pml_G = (patch_type == PatchType::fine) ? pml[lev]->GetG_fp() : pml[lev]->GetG_cp();
+        MultiSigmaBox const& sigba = (patch_type == PatchType::fine) ? pml[lev]->GetMultiSigmaBox_fp()
+                                                                     : pml[lev]->GetMultiSigmaBox_cp();
 
         const amrex::IntVect Ex_stag = pml_E[0]->ixType().toIntVect();
         const amrex::IntVect Ey_stag = pml_E[1]->ixType().toIntVect();
@@ -100,12 +100,12 @@ WarpX::DampPML (int lev, PatchType patch_type)
             const Box& tby  = mfi.tilebox( pml_B[1]->ixType().toIntVect() );
             const Box& tbz  = mfi.tilebox( pml_B[2]->ixType().toIntVect() );
 
-            auto const& pml_Exfab = pml_E[0]->array(mfi);
-            auto const& pml_Eyfab = pml_E[1]->array(mfi);
-            auto const& pml_Ezfab = pml_E[2]->array(mfi);
-            auto const& pml_Bxfab = pml_B[0]->array(mfi);
-            auto const& pml_Byfab = pml_B[1]->array(mfi);
-            auto const& pml_Bzfab = pml_B[2]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Exfab = pml_E[0]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Eyfab = pml_E[1]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Ezfab = pml_E[2]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Bxfab = pml_B[0]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Byfab = pml_B[1]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_Bzfab = pml_B[2]->array(mfi);
             amrex::Real const * AMREX_RESTRICT sigma_fac_x = sigba[mfi].sigma_fac[0].data();
 #if (AMREX_SPACEDIM == 3)
             amrex::Real const * AMREX_RESTRICT sigma_fac_y = sigba[mfi].sigma_fac[1].data();
@@ -170,7 +170,7 @@ WarpX::DampPML (int lev, PatchType patch_type)
             // is used, only a simple multiplication is performed.
             if (pml_F) {
                 const Box& tnd = mfi.nodaltilebox();
-                auto const& pml_F_fab = pml_F->array(mfi);
+                amrex::Array4<amrex::Real> const& pml_F_fab = pml_F->array(mfi);
                 amrex::ParallelFor(tnd, [=] AMREX_GPU_DEVICE (int i, int j, int k)
                 {
                     warpx_damp_pml_scalar(i, j, k, pml_F_fab, F_stag, sigma_fac_x, sigma_fac_y, sigma_fac_z,
@@ -181,7 +181,7 @@ WarpX::DampPML (int lev, PatchType patch_type)
             // Damp G when WarpX::do_divb_cleaning = true
             if (pml_G) {
                 const Box& tb = mfi.tilebox(G_stag);
-                auto const& pml_G_fab = pml_G->array(mfi);
+                amrex::Array4<amrex::Real> const& pml_G_fab = pml_G->array(mfi);
                 amrex::ParallelFor(tb, [=] AMREX_GPU_DEVICE (int i, int j, int k)
                 {
                     warpx_damp_pml_scalar(i, j, k, pml_G_fab, G_stag, sigma_fac_x, sigma_fac_y, sigma_fac_z,
@@ -218,18 +218,18 @@ WarpX::DampJPML (int lev, PatchType patch_type)
     if (pml[lev]->ok())
     {
 
-        const auto& pml_j = (patch_type == PatchType::fine) ? pml[lev]->Getj_fp() : pml[lev]->Getj_cp();
-        const auto& sigba = (patch_type == PatchType::fine) ? pml[lev]->GetMultiSigmaBox_fp()
-                                                            : pml[lev]->GetMultiSigmaBox_cp();
+        std::array<amrex::MultiFab*,3> const& pml_j = (patch_type == PatchType::fine) ? pml[lev]->Getj_fp() : pml[lev]->Getj_cp();
+        MultiSigmaBox const& sigba = (patch_type == PatchType::fine) ? pml[lev]->GetMultiSigmaBox_fp()
+                                                                     : pml[lev]->GetMultiSigmaBox_cp();
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
 #endif
         for ( MFIter mfi(*pml_j[0], TilingIfNotGPU()); mfi.isValid(); ++mfi )
         {
-            auto const& pml_jxfab = pml_j[0]->array(mfi);
-            auto const& pml_jyfab = pml_j[1]->array(mfi);
-            auto const& pml_jzfab = pml_j[2]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_jxfab = pml_j[0]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_jyfab = pml_j[1]->array(mfi);
+            amrex::Array4<amrex::Real> const& pml_jzfab = pml_j[2]->array(mfi);
             const Real* sigma_cumsum_fac_j_x = sigba[mfi].sigma_cumsum_fac[0].data();
             const Real* sigma_star_cumsum_fac_j_x = sigba[mfi].sigma_star_cumsum_fac[0].data();
 #if (AMREX_SPACEDIM == 3)
