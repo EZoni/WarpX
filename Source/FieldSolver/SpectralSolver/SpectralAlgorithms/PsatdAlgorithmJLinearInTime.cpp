@@ -128,6 +128,7 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
             const Complex Jy_new = fields(i,j,k,Idx.Jy_new);
             const Complex Jz_new = fields(i,j,k,Idx.Jz_new);
             const Complex rho_old = fields(i,j,k,Idx.rho_old);
+            const Complex rho_mid = fields(i,j,k,Idx.rho_mid);
             const Complex rho_new = fields(i,j,k,Idx.rho_new);
 
             Complex F_old, G_old;
@@ -168,85 +169,164 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
             const Complex Jy_diff = (Jy_new-Jy_old) / dt;
             const Complex Jz_diff = (Jz_new-Jz_old) / dt;
 
-            if (knorm2 == 0._rt)
+            if (!dive_cleaning && !divb_cleaning)
             {
-                fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_diff;
-                fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_diff;
-                fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_diff;
+                if (knorm2 == 0._rt)
+                {
+                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_diff;
+                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_diff;
+                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_diff;
+                }
+                else // knorm2 != 0
+                {
+                    const amrex::Real C1 = (kx2 + ky2*C + kz2*C) / knorm2;
+                    const amrex::Real C2 = (ky2 + kz2*C + kx2*C) / knorm2;
+                    const amrex::Real C3 = (kz2 + kx2*C + ky2*C) / knorm2;
+
+                    const amrex::Real C4 = kx*ky*(1._rt-C) / knorm2;
+                    const amrex::Real C5 = ky*kz*(1._rt-C) / knorm2;
+                    const amrex::Real C6 = kz*kx*(1._rt-C) / knorm2;
+
+                    const amrex::Real C7 = c2*kx*S_ck;
+                    const amrex::Real C8 = c2*ky*S_ck;
+                    const amrex::Real C9 = c2*kz*S_ck;
+
+                    const amrex::Real C10 = -mu0*c2*(dt*kx2 + ky2*S_ck + kz2*S_ck) / knorm2;
+                    const amrex::Real C11 = -mu0*c2*(dt*ky2 + kz2*S_ck + kx2*S_ck) / knorm2;
+                    const amrex::Real C12 = -mu0*c2*(dt*kz2 + kx2*S_ck + ky2*S_ck) / knorm2;
+
+                    const amrex::Real C13 = mu0*c2*kx*ky*(S_ck-dt) / knorm2;
+                    const amrex::Real C14 = mu0*c2*ky*kz*(S_ck-dt) / knorm2;
+                    const amrex::Real C15 = mu0*c2*kz*kx*(S_ck-dt) / knorm2;
+
+                    const amrex::Real C16 = mu0*kx*(1._rt-C) / knorm2;
+                    const amrex::Real C17 = mu0*ky*(1._rt-C) / knorm2;
+                    const amrex::Real C18 = mu0*kz*(1._rt-C) / knorm2;
+
+                    const amrex::Real C19 = -mu0*(c2*dt2*kx2*knorm2 + 2._rt*ky2*(1._rt-C)
+                                            + 2._rt*kz2*(1._rt-C)) / (2._rt*knorm4);
+                    const amrex::Real C20 = -mu0*(c2*dt2*ky2*knorm2 + 2._rt*kz2*(1._rt-C)
+                                            + 2._rt*kx2*(1._rt-C)) / (2._rt*knorm4);
+                    const amrex::Real C21 = -mu0*(c2*dt2*kz2*knorm2 + 2._rt*kx2*(1._rt-C)
+                                            + 2._rt*ky2*(1._rt-C)) / (2._rt*knorm4);
+
+                    const amrex::Real C22 = -mu0*kx*ky*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / (2._rt*knorm4);
+                    const amrex::Real C23 = -mu0*ky*kz*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / (2._rt*knorm4);
+                    const amrex::Real C24 = -mu0*kz*kx*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / (2._rt*knorm4);
+
+                    const amrex::Real C25 = mu0*kx*(S_ck-dt) / knorm2;
+                    const amrex::Real C26 = mu0*ky*(S_ck-dt) / knorm2;
+                    const amrex::Real C27 = mu0*kz*(S_ck-dt) / knorm2;
+
+                    fields(i,j,k,Idx.Ex) = C1*Ex_old + C4*Ey_old + C6*Ez_old
+                                           - I*C9*By_old + I*C8*Bz_old
+                                           + C10*Jx_old + C13*Jy_old + C15*Jz_old;
+                                           + C19*Jx_diff + C22*Jy_diff + C24*Jz_diff;
+
+                    fields(i,j,k,Idx.Ey) = C4*Ex_old + C2*Ey_old + C5*Ez_old
+                                           + I*C9*Bx_old - I*C7*Bz_old
+                                           + C13*Jx_old + C11*Jy_old + C14*Jz_old
+                                           + C22*Jx_diff + C20*Jy_diff + C23*Jz_diff;
+
+                    fields(i,j,k,Idx.Ez) = C6*Ex_old + C5*Ey_old + C3*Ez_old
+                                           - I*C8*Bx_old + I*C7*By_old
+                                           + C15*Jx_old + C14*Jy_old + C12*Jz_old
+                                           + C24*Jx_diff + C23*Jy_diff + C21*Jz_diff;
+
+                    fields(i,j,k,Idx.Bx) = C1*Bx_old + C4*By_old + C6*Bz_old
+                                           + I*C9/c2*Ey_old - I*C8/c2*Ez_old
+                                           - I*C18*Jy_old + I*C17*Jz_old
+                                           + I*C27*Jy_diff - I*C26*Jz_diff;
+
+                    fields(i,j,k,Idx.By) = C4*Bx_old + C2*By_old + C5*Bz_old
+                                           - I*C9/c2*Ex_old + I*C7/c2*Ez_old
+                                           + I*C18*Jx_old - I*C16*Jz_old
+                                           - I*C27*Jx_diff + I*C25*Jz_diff;
+
+                    fields(i,j,k,Idx.Bz) = C6*Bx_old + C5*By_old + C3*Bz_old
+                                           + I*C8/c2*Ex_old - I*C7/c2*Ey_old
+                                           - I*C17*Jx_old + I*C16*Jy_old
+                                           + I*C26*Jx_diff - I*C25*Jy_diff;
+                }
             }
-            else // knorm2 != 0
+            else if (dive_cleaning && divb_cleaning)
             {
-                const amrex::Real C1 = (kx2 + ky2*C + kz2*C) / knorm2;
-                const amrex::Real C2 = (ky2 + kz2*C + kx2*C) / knorm2;
-                const amrex::Real C3 = (kz2 + kx2*C + ky2*C) / knorm2;
+                const Complex rho_cq = 2._rt*(rho_new - 2._rt*rho_mid + rho_old) / dt2;
+                const Complex rho_cl = - (rho_new - 4._rt*rho_mid + 3._rt*rho_old) / dt;
+                const Complex rho_cc = rho_old;
 
-                const amrex::Real C4 = kx*ky*(1._rt-C) / knorm2;
-                const amrex::Real C5 = ky*kz*(1._rt-C) / knorm2;
-                const amrex::Real C6 = kz*kx*(1._rt-C) / knorm2;
+                if (knorm2 == 0._rt)
+                {
+                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_diff;
+                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_diff;
+                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_diff;
 
-                const amrex::Real C7 = c2*kx*S_ck;
-                const amrex::Real C8 = c2*ky*S_ck;
-                const amrex::Real C9 = c2*kz*S_ck;
+                    fields(i,j,k,Idx.F) = F_old - 0.5_rt*mu0*c2*dt2*rho_cl - inv_ep0*dt*rho_cc;
+                }
+                else // knorm2 != 0
+                {
+                    const amrex::Real C1 = c2*kx*S_ck;
+                    const amrex::Real C2 = c2*ky*S_ck;
+                    const amrex::Real C3 = c2*kz*S_ck;
 
-                const amrex::Real C10 = -mu0*c2*(dt*kx2 + ky2*S_ck + kz2*S_ck) / knorm2;
-                const amrex::Real C11 = -mu0*c2*(dt*ky2 + kz2*S_ck + kx2*S_ck) / knorm2;
-                const amrex::Real C12 = -mu0*c2*(dt*kz2 + kx2*S_ck + ky2*S_ck) / knorm2;
+                    const amrex::Real C4 = mu0*c2*kx*(S_ck-dt) / knorm2;
+                    const amrex::Real C5 = mu0*c2*ky*(S_ck-dt) / knorm2;
+                    const amrex::Real C6 = mu0*c2*kz*(S_ck-dt) / knorm2;
 
-                const amrex::Real C13 = mu0*c2*kx*ky*(S_ck-dt) / knorm2;
-                const amrex::Real C14 = mu0*c2*ky*kz*(S_ck-dt) / knorm2;
-                const amrex::Real C15 = mu0*c2*kz*kx*(S_ck-dt) / knorm2;
+                    const amrex::Real C7 = mu0*kx*(1._rt-C) / knorm2;
+                    const amrex::Real C8 = mu0*ky*(1._rt-C) / knorm2;
+                    const amrex::Real C9 = mu0*kz*(1._rt-C) / knorm2;
 
-                const amrex::Real C16 = mu0*kx*(1._rt-C) / knorm2;
-                const amrex::Real C17 = mu0*ky*(1._rt-C) / knorm2;
-                const amrex::Real C18 = mu0*kz*(1._rt-C) / knorm2;
+                    const amrex::Real C10 = -mu0*kx*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / knorm4;
+                    const amrex::Real C11 = -mu0*ky*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / knorm4;
+                    const amrex::Real C12 = -mu0*kz*(c2*dt2*knorm2
+                                            + 2._rt*(C-1._rt)) / knorm4;
 
-                const amrex::Real C19 = -mu0*(c2*dt2*kx2*knorm2 + 2._rt*ky2*(1._rt-C)
-                                        + 2._rt*kz2*(1._rt-C)) / (2._rt*knorm4);
-                const amrex::Real C20 = -mu0*(c2*dt2*ky2*knorm2 + 2._rt*kz2*(1._rt-C)
-                                        + 2._rt*kx2*(1._rt-C)) / (2._rt*knorm4);
-                const amrex::Real C21 = -mu0*(c2*dt2*kz2*knorm2 + 2._rt*kx2*(1._rt-C)
-                                        + 2._rt*ky2*(1._rt-C)) / (2._rt*knorm4);
+                    const amrex::Real C13 = mu0*kx*(S_ck-dt) / knorm2;
+                    const amrex::Real C14 = mu0*ky*(S_ck-dt) / knorm2;
+                    const amrex::Real C15 = mu0*kz*(S_ck-dt) / knorm2;
 
-                const amrex::Real C22 = -mu0*kx*ky*(c2*dt2*knorm2
-                                        + 2._rt*(C-1._rt)) / (2._rt*knorm4);
-                const amrex::Real C23 = -mu0*ky*kz*(c2*dt2*knorm2
-                                        + 2._rt*(C-1._rt)) / (2._rt*knorm4);
-                const amrex::Real C24 = -mu0*kz*kx*(c2*dt2*knorm2
-                                        + 2._rt*(C-1._rt)) / (2._rt*knorm4);
+                    const amrex::Real C16 = mu0*(C-1._rt) / knorm2;
+                    const amrex::Real C17 = 2._rt*mu0*(S_ck-dt) / knorm2;
 
-                const amrex::Real C25 = mu0*kx*(S_ck-dt) / knorm2;
-                const amrex::Real C26 = mu0*ky*(S_ck-dt) / knorm2;
-                const amrex::Real C27 = mu0*kz*(S_ck-dt) / knorm2;
+                    fields(i,j,k,Idx.Ex) = C*Ex_old - I*C3*By_old + I*C2*Bz_old
+                                           + I*C1*F_old - inv_ep0*S_ck*Jx_old + C16*Jx_diff
+                                           + I*C10*rho_cq + I*C4*rho_cl - I*c2*C7*rho_cc;
 
-                fields(i,j,k,Idx.Ex) = C1*Ex_old + C4*Ey_old + C6*Ez_old
-                                       - I*C9*By_old + I*C8*Bz_old
-                                       + C10*Jx_old + C13*Jy_old + C15*Jz_old;
-                                       + C19*Jx_diff + C22*Jy_diff + C24*Jz_diff;
+                    fields(i,j,k,Idx.Ey) = C*Ey_old + I*C3*Bx_old - I*C1*Bz_old
+                                           + I*C2*F_old - inv_ep0*S_ck*Jy_old + C16*Jy_diff
+                                           + I*C11*rho_cq + I*C5*rho_cl - I*c2*C8*rho_cc;
 
-                fields(i,j,k,Idx.Ey) = C4*Ex_old + C2*Ey_old + C5*Ez_old
-                                       + I*C9*Bx_old - I*C7*Bz_old
-                                       + C13*Jx_old + C11*Jy_old + C14*Jz_old
-                                       + C22*Jx_diff + C20*Jy_diff + C23*Jz_diff;
+                    fields(i,j,k,Idx.Ez) = C*Ez_old - I*C2*Bx_old + I*C1*By_old
+                                           + I*C3*F_old - inv_ep0*S_ck*Jz_old + C16*Jz_diff
+                                           + I*C12*rho_cq + I*C6*rho_cl - I*c2*C9*rho_cc;
 
-                fields(i,j,k,Idx.Ez) = C6*Ex_old + C5*Ey_old + C3*Ez_old
-                                       - I*C8*Bx_old + I*C7*By_old
-                                       + C15*Jx_old + C14*Jy_old + C12*Jz_old
-                                       + C24*Jx_diff + C23*Jy_diff + C21*Jz_diff;
+                    fields(i,j,k,Idx.Bx) = C*Bx_old + I*C3/c2*Ey_old - I*C2/c2*Ez_old
+                                           + I*C1*G_old - I*C9*Jy_old + I*C8*Jz_old
+                                           + I*C15*Jy_diff - I*C14*Jz_diff;
 
-                fields(i,j,k,Idx.Bx) = C1*Bx_old + C4*By_old + C6*Bz_old
-                                       + I*C9/c2*Ey_old - I*C8/c2*Ez_old
-                                       - I*C18*Jy_old + I*C17*Jz_old
-                                       + I*C27*Jy_diff - I*C26*Jz_diff;
+                    fields(i,j,k,Idx.By) = C*By_old - I*C3/c2*Ex_old + I*C1/c2*Ez_old
+                                           + I*C2*G_old + I*C9*Jx_old - I*C7*Jz_old
+                                           - I*C15*Jx_diff + I*C13*Jz_diff;
 
-                fields(i,j,k,Idx.By) = C4*Bx_old + C2*By_old + C5*Bz_old
-                                       - I*C9/c2*Ex_old + I*C7/c2*Ez_old
-                                       + I*C18*Jx_old - I*C16*Jz_old
-                                       - I*C27*Jx_diff + I*C25*Jz_diff;
+                    fields(i,j,k,Idx.Bz) = C*Bz_old + I*C2/c2*Ex_old - I*C1/c2*Ey_old
+                                           + I*C3*G_old - I*C8*Jx_old + I*C7*Jy_old
+                                           + I*C14*Jx_diff - I*C13*Jy_diff;
 
-                fields(i,j,k,Idx.Bz) = C6*Bx_old + C5*By_old + C3*Bz_old
-                                       + I*C8/c2*Ex_old - I*C7/c2*Ey_old
-                                       - I*C17*Jx_old + I*C16*Jy_old
-                                       + I*C26*Jx_diff - I*C25*Jy_diff;
+                    fields(i,j,k,Idx.F) = C*F_old
+                                          + I*C1/c2*Ex_old + I*C2/c2*Ey_old + I*C3/c2*Ez_old
+                                          - I*C7*Jx_old - I*C8*Jy_old - I*C9*Jz_old
+                                          + I*C13*Jx_diff + I*C14*Jy_diff + I*C15*Jz_diff
+                                          + C17*rho_cq + C16*rho_cl - inv_ep0*S_ck*rho_cc;
+
+                    fields(i,j,k,Idx.G) = C*G_old
+                                          + I*C1/c2*Bx_old + I*C2/c2*By_old + I*C3/c2*Bz_old;
+                }
             }
 
             //// Update equations for E in the formulation with rho
@@ -277,30 +357,30 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
             //    - I * S_ck * (kx * Ey_old - ky * Ex_old) + I * X1 * (kx * Jy_old - ky * Jx_old)
             //    + I * X2/c2 * (kx * (Jy_new - Jy_old) - ky * (Jx_new - Jx_old));
 
-            if (dive_cleaning)
-            {
-                const Complex k_dot_E = kx * Ex_old + ky * Ey_old + kz * Ez_old;
-                const Complex k_dot_J  = kx * Jx_old + ky * Jy_old + kz * Jz_old;
-                const Complex k_dot_dJ = kx * (Jx_new - Jx_old) + ky * (Jy_new - Jy_old) + kz * (Jz_new - Jz_old);
+            //if (dive_cleaning)
+            //{
+            //    const Complex k_dot_E = kx * Ex_old + ky * Ey_old + kz * Ez_old;
+            //    const Complex k_dot_J  = kx * Jx_old + ky * Jy_old + kz * Jz_old;
+            //    const Complex k_dot_dJ = kx * (Jx_new - Jx_old) + ky * (Jy_new - Jy_old) + kz * (Jz_new - Jz_old);
 
-                fields(i,j,k,Idx.Ex) += I * c2 * S_ck * F_old * kx;
-                fields(i,j,k,Idx.Ey) += I * c2 * S_ck * F_old * ky;
-                fields(i,j,k,Idx.Ez) += I * c2 * S_ck * F_old * kz;
+            //    fields(i,j,k,Idx.Ex) += I * c2 * S_ck * F_old * kx;
+            //    fields(i,j,k,Idx.Ey) += I * c2 * S_ck * F_old * ky;
+            //    fields(i,j,k,Idx.Ez) += I * c2 * S_ck * F_old * kz;
 
-                fields(i,j,k,Idx.F) = C * F_old + S_ck * (I * k_dot_E - rho_old * inv_ep0)
-                    - X1 * ((rho_new - rho_old) / dt + I * k_dot_J) - I * X2/c2 * k_dot_dJ;
-            }
+            //    fields(i,j,k,Idx.F) = C * F_old + S_ck * (I * k_dot_E - rho_old * inv_ep0)
+            //        - X1 * ((rho_new - rho_old) / dt + I * k_dot_J) - I * X2/c2 * k_dot_dJ;
+            //}
 
-            if (divb_cleaning)
-            {
-                const Complex k_dot_B = kx * Bx_old + ky * By_old + kz * Bz_old;
+            //if (divb_cleaning)
+            //{
+            //    const Complex k_dot_B = kx * Bx_old + ky * By_old + kz * Bz_old;
 
-                fields(i,j,k,Idx.Bx) += I * S_ck * G_old * kx;
-                fields(i,j,k,Idx.By) += I * S_ck * G_old * ky;
-                fields(i,j,k,Idx.Bz) += I * S_ck * G_old * kz;
+            //    fields(i,j,k,Idx.Bx) += I * S_ck * G_old * kx;
+            //    fields(i,j,k,Idx.By) += I * S_ck * G_old * ky;
+            //    fields(i,j,k,Idx.Bz) += I * S_ck * G_old * kz;
 
-                fields(i,j,k,Idx.G) = C * G_old + I * c2 * S_ck * k_dot_B;
-            }
+            //    fields(i,j,k,Idx.G) = C * G_old + I * c2 * S_ck * k_dot_B;
+            //}
 
             if (time_averaging)
             {

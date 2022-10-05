@@ -598,7 +598,6 @@ WarpX::OneStep_multiJ (const amrex::Real cur_time)
         const amrex::Real t_depose_current = (J_in_time == JInTime::Linear) ?
             (i_depose-n_depose+1)*sub_dt : (i_depose-n_depose+0.5_rt)*sub_dt;
 
-        // TODO Update this when rho quadratic in time is implemented
         const amrex::Real t_depose_charge = (i_depose-n_depose+1)*sub_dt;
 
         // Deposit new J at relative time t_depose_current with time step dt
@@ -619,6 +618,19 @@ WarpX::OneStep_multiJ (const amrex::Real cur_time)
         {
             // Move rho deposited previously, from new to old
             PSATDMoveRhoNewToRhoOld();
+
+            if (rho_in_time == RhoInTime::Quadratic)
+            {
+                // Deposit rho at relative half time
+                mypc->DepositCharge(rho_fp, t_depose_charge - 0.5*sub_dt);
+                // Filter, exchange boundary, and interpolate across levels
+                SyncRho();
+                // Forward FFT of rho
+                PSATDForwardTransformRho(rho_fp, rho_cp, 0, 1);
+
+                // Move rho deposited previously, from new to mid
+                PSATDMoveRhoNewToRhoMid();
+            }
 
             // Deposit rho at relative time t_depose_charge
             mypc->DepositCharge(rho_fp, t_depose_charge);
