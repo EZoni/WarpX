@@ -165,17 +165,17 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
             const amrex::Real knorm2 = kx2 + ky2 + kz2;
             const amrex::Real knorm4 = knorm2*knorm2;
 
-            const Complex Jx_diff = (Jx_new-Jx_old) / dt;
-            const Complex Jy_diff = (Jy_new-Jy_old) / dt;
-            const Complex Jz_diff = (Jz_new-Jz_old) / dt;
+            const Complex Jx_c1 = (Jx_new-Jx_old) / dt;
+            const Complex Jy_c1 = (Jy_new-Jy_old) / dt;
+            const Complex Jz_c1 = (Jz_new-Jz_old) / dt;
 
             if (!dive_cleaning && !divb_cleaning)
             {
                 if (knorm2 == 0._rt)
                 {
-                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_diff;
-                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_diff;
-                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_diff;
+                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_c1;
+                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_c1;
+                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_c1;
                 }
                 else // knorm2 != 0
                 {
@@ -224,47 +224,46 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
                     fields(i,j,k,Idx.Ex) = C1*Ex_old + C4*Ey_old + C6*Ez_old
                                            - I*C9*By_old + I*C8*Bz_old
                                            + C10*Jx_old + C13*Jy_old + C15*Jz_old;
-                                           + C19*Jx_diff + C22*Jy_diff + C24*Jz_diff;
+                                           + C19*Jx_c1 + C22*Jy_c1 + C24*Jz_c1;
 
                     fields(i,j,k,Idx.Ey) = C4*Ex_old + C2*Ey_old + C5*Ez_old
                                            + I*C9*Bx_old - I*C7*Bz_old
                                            + C13*Jx_old + C11*Jy_old + C14*Jz_old
-                                           + C22*Jx_diff + C20*Jy_diff + C23*Jz_diff;
+                                           + C22*Jx_c1 + C20*Jy_c1 + C23*Jz_c1;
 
                     fields(i,j,k,Idx.Ez) = C6*Ex_old + C5*Ey_old + C3*Ez_old
                                            - I*C8*Bx_old + I*C7*By_old
                                            + C15*Jx_old + C14*Jy_old + C12*Jz_old
-                                           + C24*Jx_diff + C23*Jy_diff + C21*Jz_diff;
+                                           + C24*Jx_c1 + C23*Jy_c1 + C21*Jz_c1;
 
                     fields(i,j,k,Idx.Bx) = C1*Bx_old + C4*By_old + C6*Bz_old
                                            + I*C9/c2*Ey_old - I*C8/c2*Ez_old
                                            - I*C18*Jy_old + I*C17*Jz_old
-                                           + I*C27*Jy_diff - I*C26*Jz_diff;
+                                           + I*C27*Jy_c1 - I*C26*Jz_c1;
 
                     fields(i,j,k,Idx.By) = C4*Bx_old + C2*By_old + C5*Bz_old
                                            - I*C9/c2*Ex_old + I*C7/c2*Ez_old
                                            + I*C18*Jx_old - I*C16*Jz_old
-                                           - I*C27*Jx_diff + I*C25*Jz_diff;
+                                           - I*C27*Jx_c1 + I*C25*Jz_c1;
 
                     fields(i,j,k,Idx.Bz) = C6*Bx_old + C5*By_old + C3*Bz_old
                                            + I*C8/c2*Ex_old - I*C7/c2*Ey_old
                                            - I*C17*Jx_old + I*C16*Jy_old
-                                           + I*C26*Jx_diff - I*C25*Jy_diff;
+                                           + I*C26*Jx_c1 - I*C25*Jy_c1;
                 }
             }
             else if (dive_cleaning && divb_cleaning)
             {
-                const Complex rho_cq = 2._rt*(rho_new - 2._rt*rho_mid + rho_old) / dt2;
-                const Complex rho_cl = - (rho_new - 4._rt*rho_mid + 3._rt*rho_old) / dt;
-                const Complex rho_cc = rho_old;
+                const Complex rho_c2 = (-4._rt*rho_mid + 2._rt*rho_new + 2._rt*rho_old) / dt2;
+                const Complex rho_c1 = (4._rt*rho_mid - rho_new - 3._rt*rho_old) / dt;
 
                 if (knorm2 == 0._rt)
                 {
-                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_diff;
-                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_diff;
-                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_diff;
+                    fields(i,j,k,Idx.Ex) = Ex_old - mu0*c2*dt*Jx_old - 0.5_rt*mu0*c2*dt2*Jx_c1;
+                    fields(i,j,k,Idx.Ey) = Ey_old - mu0*c2*dt*Jy_old - 0.5_rt*mu0*c2*dt2*Jy_c1;
+                    fields(i,j,k,Idx.Ez) = Ez_old - mu0*c2*dt*Jz_old - 0.5_rt*mu0*c2*dt2*Jz_c1;
 
-                    fields(i,j,k,Idx.F) = F_old - 0.5_rt*mu0*c2*dt2*rho_cl - inv_ep0*dt*rho_cc;
+                    fields(i,j,k,Idx.F) = F_old - 0.5_rt*mu0*c2*dt2*rho_c1 - inv_ep0*dt*rho_old;
                 }
                 else // knorm2 != 0
                 {
@@ -295,34 +294,34 @@ PsatdAlgorithmJLinearInTime::pushSpectralFields (SpectralFieldData& f) const
                     const amrex::Real C17 = 2._rt*mu0*(S_ck-dt) / knorm2;
 
                     fields(i,j,k,Idx.Ex) = C*Ex_old - I*C3*By_old + I*C2*Bz_old
-                                           + I*C1*F_old - inv_ep0*S_ck*Jx_old + C16*Jx_diff
-                                           + I*C10*rho_cq + I*C4*rho_cl - I*c2*C7*rho_cc;
+                                           + I*C1*F_old - inv_ep0*S_ck*Jx_old + C16*Jx_c1
+                                           + I*C10*rho_c2 + I*C4*rho_c1 - I*c2*C7*rho_old;
 
                     fields(i,j,k,Idx.Ey) = C*Ey_old + I*C3*Bx_old - I*C1*Bz_old
-                                           + I*C2*F_old - inv_ep0*S_ck*Jy_old + C16*Jy_diff
-                                           + I*C11*rho_cq + I*C5*rho_cl - I*c2*C8*rho_cc;
+                                           + I*C2*F_old - inv_ep0*S_ck*Jy_old + C16*Jy_c1
+                                           + I*C11*rho_c2 + I*C5*rho_c1 - I*c2*C8*rho_old;
 
                     fields(i,j,k,Idx.Ez) = C*Ez_old - I*C2*Bx_old + I*C1*By_old
-                                           + I*C3*F_old - inv_ep0*S_ck*Jz_old + C16*Jz_diff
-                                           + I*C12*rho_cq + I*C6*rho_cl - I*c2*C9*rho_cc;
+                                           + I*C3*F_old - inv_ep0*S_ck*Jz_old + C16*Jz_c1
+                                           + I*C12*rho_c2 + I*C6*rho_c1 - I*c2*C9*rho_old;
 
                     fields(i,j,k,Idx.Bx) = C*Bx_old + I*C3/c2*Ey_old - I*C2/c2*Ez_old
                                            + I*C1*G_old - I*C9*Jy_old + I*C8*Jz_old
-                                           + I*C15*Jy_diff - I*C14*Jz_diff;
+                                           + I*C15*Jy_c1 - I*C14*Jz_c1;
 
                     fields(i,j,k,Idx.By) = C*By_old - I*C3/c2*Ex_old + I*C1/c2*Ez_old
                                            + I*C2*G_old + I*C9*Jx_old - I*C7*Jz_old
-                                           - I*C15*Jx_diff + I*C13*Jz_diff;
+                                           - I*C15*Jx_c1 + I*C13*Jz_c1;
 
                     fields(i,j,k,Idx.Bz) = C*Bz_old + I*C2/c2*Ex_old - I*C1/c2*Ey_old
                                            + I*C3*G_old - I*C8*Jx_old + I*C7*Jy_old
-                                           + I*C14*Jx_diff - I*C13*Jy_diff;
+                                           + I*C14*Jx_c1 - I*C13*Jy_c1;
 
                     fields(i,j,k,Idx.F) = C*F_old
                                           + I*C1/c2*Ex_old + I*C2/c2*Ey_old + I*C3/c2*Ez_old
                                           - I*C7*Jx_old - I*C8*Jy_old - I*C9*Jz_old
-                                          + I*C13*Jx_diff + I*C14*Jy_diff + I*C15*Jz_diff
-                                          + C17*rho_cq + C16*rho_cl - inv_ep0*S_ck*rho_cc;
+                                          + I*C13*Jx_c1 + I*C14*Jy_c1 + I*C15*Jz_c1
+                                          + C17*rho_c2 + C16*rho_c1 - inv_ep0*S_ck*rho_old;
 
                     fields(i,j,k,Idx.G) = C*G_old
                                           + I*C1/c2*Bx_old + I*C2/c2*By_old + I*C3/c2*Bz_old;
