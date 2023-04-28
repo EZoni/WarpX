@@ -108,9 +108,6 @@ Real WarpX::moving_window_v = std::numeric_limits<amrex::Real>::max();
 
 bool WarpX::fft_do_time_averaging = false;
 
-amrex::IntVect WarpX::m_fill_guards_fields  = amrex::IntVect(0);
-amrex::IntVect WarpX::m_fill_guards_current = amrex::IntVect(0);
-
 Real WarpX::quantum_xi_c2 = PhysConst::xi_c2;
 Real WarpX::gamma_boost = 1._rt;
 Real WarpX::beta_boost = 0._rt;
@@ -469,6 +466,8 @@ WarpX::WarpX ()
 
     m_accelerator_lattice.resize(nlevs_max);
 
+    m_fill_guards_fields.resize(nlevs_max);
+    m_fill_guards_current.resize(nlevs_max);
 }
 
 WarpX::~WarpX ()
@@ -1537,24 +1536,37 @@ WarpX::ReadParameters ()
             }
         }
 
-        // Fill guard cells with backward FFTs in directions with field damping
+        // Defaults for parameters to fill guard cells with backward FFTs
+        const int nlevs_max = maxLevel() + 1;
+        for (int lev=0; lev<nlevs_max; ++lev)
+        {
+             m_fill_guards_fields[lev] = amrex::IntVect(0);
+             m_fill_guards_current[lev] = amrex::IntVect(0);
+        }
+
+        // Fill guard cells with backward FFTs in directions with field damping,
+        // but do this only on MR level lev=0
         for (int dir = 0; dir < AMREX_SPACEDIM; dir++)
         {
             if (WarpX::field_boundary_lo[dir] == FieldBoundaryType::Damped ||
                 WarpX::field_boundary_hi[dir] == FieldBoundaryType::Damped)
             {
-                WarpX::m_fill_guards_fields[dir] = 1;
+                // The first index 0 represents MR level lev=0
+                WarpX::m_fill_guards_fields[0][dir] = 1;
             }
         }
 
         // Without periodic single box, fill guard cells with backward FFTs,
-        // with current correction or Vay deposition
+        // with current correction or Vay deposition, but do this only on MR level lev=0
         if (fft_periodic_single_box == false)
         {
             if (current_correction ||
                 current_deposition_algo == CurrentDepositionAlgo::Vay)
             {
-                WarpX::m_fill_guards_current = amrex::IntVect(1);
+                for (int lev=0; lev<nlevs_max; ++lev)
+                {
+                     WarpX::m_fill_guards_current[lev] = amrex::IntVect(1);
+                }
             }
         }
     }

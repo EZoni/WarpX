@@ -131,16 +131,16 @@ void WarpX::PSATDBackwardTransformEB (
     for (int lev = 0; lev <= finest_level; ++lev)
     {
         BackwardTransformVect(lev, *spectral_solver_fp[lev], E_fp[lev],
-                              Idx.Ex, Idx.Ey, Idx.Ez, m_fill_guards_fields);
+                              Idx.Ex, Idx.Ey, Idx.Ez, m_fill_guards_fields[lev]);
         BackwardTransformVect(lev, *spectral_solver_fp[lev], B_fp[lev],
-                              Idx.Bx, Idx.By, Idx.Bz, m_fill_guards_fields);
+                              Idx.Bx, Idx.By, Idx.Bz, m_fill_guards_fields[lev]);
 
         if (spectral_solver_cp[lev])
         {
             BackwardTransformVect(lev, *spectral_solver_cp[lev], E_cp[lev],
-                                  Idx.Ex, Idx.Ey, Idx.Ez, m_fill_guards_fields);
+                                  Idx.Ex, Idx.Ey, Idx.Ez, m_fill_guards_fields[lev]);
             BackwardTransformVect(lev, *spectral_solver_cp[lev], B_cp[lev],
-                                  Idx.Bx, Idx.By, Idx.Bz, m_fill_guards_fields);
+                                  Idx.Bx, Idx.By, Idx.Bz, m_fill_guards_fields[lev]);
         }
     }
 
@@ -162,16 +162,16 @@ void WarpX::PSATDBackwardTransformEBavg (
     for (int lev = 0; lev <= finest_level; ++lev)
     {
         BackwardTransformVect(lev, *spectral_solver_fp[lev], E_avg_fp[lev],
-                              Idx.Ex_avg, Idx.Ey_avg, Idx.Ez_avg, m_fill_guards_fields);
+                              Idx.Ex_avg, Idx.Ey_avg, Idx.Ez_avg, m_fill_guards_fields[lev]);
         BackwardTransformVect(lev, *spectral_solver_fp[lev], B_avg_fp[lev],
-                              Idx.Bx_avg, Idx.By_avg, Idx.Bz_avg, m_fill_guards_fields);
+                              Idx.Bx_avg, Idx.By_avg, Idx.Bz_avg, m_fill_guards_fields[lev]);
 
         if (spectral_solver_cp[lev])
         {
             BackwardTransformVect(lev, *spectral_solver_cp[lev], E_avg_cp[lev],
-                                  Idx.Ex_avg, Idx.Ey_avg, Idx.Ez_avg, m_fill_guards_fields);
+                                  Idx.Ex_avg, Idx.Ey_avg, Idx.Ez_avg, m_fill_guards_fields[lev]);
             BackwardTransformVect(lev, *spectral_solver_cp[lev], B_avg_cp[lev],
-                                  Idx.Bx_avg, Idx.By_avg, Idx.Bz_avg, m_fill_guards_fields);
+                                  Idx.Bx_avg, Idx.By_avg, Idx.Bz_avg, m_fill_guards_fields[lev]);
         }
     }
 }
@@ -202,7 +202,7 @@ WarpX::PSATDBackwardTransformF ()
 #ifdef WARPX_DIM_RZ
         if (F_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *F_fp[lev], Idx.F);
 #else
-        if (F_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *F_fp[lev], Idx.F, m_fill_guards_fields);
+        if (F_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *F_fp[lev], Idx.F, m_fill_guards_fields[lev]);
 #endif
 
         if (spectral_solver_cp[lev])
@@ -210,7 +210,7 @@ WarpX::PSATDBackwardTransformF ()
 #ifdef WARPX_DIM_RZ
             if (F_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *F_cp[lev], Idx.F);
 #else
-            if (F_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *F_cp[lev], Idx.F, m_fill_guards_fields);
+            if (F_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *F_cp[lev], Idx.F, m_fill_guards_fields[lev]);
 #endif
         }
     }
@@ -248,7 +248,7 @@ WarpX::PSATDBackwardTransformG ()
 #ifdef WARPX_DIM_RZ
         if (G_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *G_fp[lev], Idx.G);
 #else
-        if (G_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *G_fp[lev], Idx.G, m_fill_guards_fields);
+        if (G_fp[lev]) spectral_solver_fp[lev]->BackwardTransform(lev, *G_fp[lev], Idx.G, m_fill_guards_fields[lev]);
 #endif
 
         if (spectral_solver_cp[lev])
@@ -256,7 +256,7 @@ WarpX::PSATDBackwardTransformG ()
 #ifdef WARPX_DIM_RZ
             if (G_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *G_cp[lev], Idx.G);
 #else
-            if (G_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *G_cp[lev], Idx.G, m_fill_guards_fields);
+            if (G_cp[lev]) spectral_solver_cp[lev]->BackwardTransform(lev, *G_cp[lev], Idx.G, m_fill_guards_fields[lev]);
 #endif
         }
     }
@@ -347,7 +347,7 @@ void WarpX::PSATDBackwardTransformJ (
         idx_jz = static_cast<int>(Idx.Jz_mid);
 
         BackwardTransformVect(lev, *spectral_solver_fp[lev], J_fp[lev],
-                              idx_jx, idx_jy, idx_jz, m_fill_guards_current);
+                              idx_jx, idx_jy, idx_jz, m_fill_guards_current[lev]);
 
         if (spectral_solver_cp[lev])
         {
@@ -360,7 +360,7 @@ void WarpX::PSATDBackwardTransformJ (
             idx_jz = static_cast<int>(Idx.Jz_mid);
 
             BackwardTransformVect(lev, *spectral_solver_cp[lev], J_cp[lev],
-                                  idx_jx, idx_jy, idx_jz, m_fill_guards_current);
+                                  idx_jx, idx_jy, idx_jz, m_fill_guards_current[lev]);
         }
     }
 }

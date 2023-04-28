@@ -234,10 +234,10 @@ public:
     static amrex::IntVect shared_tilesize;
 
     //! Whether to fill guard cells when computing inverse FFTs of fields
-    static amrex::IntVect m_fill_guards_fields;
+    amrex::Vector<amrex::IntVect> m_fill_guards_fields;
 
     //! Whether to fill guard cells when computing inverse FFTs of currents
-    static amrex::IntVect m_fill_guards_current;
+    amrex::Vector<amrex::IntVect> m_fill_guards_current;
 
     //! Solve additional Maxwell equation for F in order to control errors in Gauss' law
     //! (useful when using current deposition algorithms that are not charge-conserving)
