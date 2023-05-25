@@ -1065,11 +1065,13 @@ WarpXParticleContainer::GetChargeDensity (int lev, bool local)
     if (WarpX::electromagnetic_solver_id == ElectromagneticSolverAlgo::PSATD)
         is_PSATD_RZ = true;
 #endif
-    if( !is_PSATD_RZ )
+
+    WarpX& warpx = WarpX::GetInstance();
+
+    if (warpx.m_rho_nodal_flag != amrex::IntVect::TheCellVector())
         nba.surroundingNodes();
 
     // Number of guard cells for local deposition of rho
-    WarpX& warpx = WarpX::GetInstance();
     const int ng_rho = warpx.get_ng_depos_rho().max();
 
     auto rho = std::make_unique<MultiFab>(nba,dm,WarpX::ncomps,ng_rho);

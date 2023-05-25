@@ -703,16 +703,17 @@ PML::PML (const int lev, const BoxArray& grid_ba, const DistributionMapping& gri
 
     if (m_dive_cleaning)
     {
-        const amrex::BoxArray ba_F_nodal = amrex::convert(ba, amrex::IntVect::TheNodeVector());
+        const amrex::IntVect& F_nodal_flag =
+            (grid_type == GridType::Collocated) ? amrex::IntVect::TheCellVector()
+                                                : amrex::IntVect::TheNodeVector();
+        const amrex::BoxArray ba_F_nodal = amrex::convert(ba, F_nodal_flag);
         WarpX::AllocInitMultiFab(pml_F_fp, ba_F_nodal, dm, 3, ngf, "pml_F_fp", 0.0_rt);
     }
 
     if (m_divb_cleaning)
     {
         // TODO Shall we define a separate guard cells parameter ngG?
-        const amrex::IntVect& G_nodal_flag =
-            (grid_type == GridType::Collocated) ? amrex::IntVect::TheNodeVector()
-                                                : amrex::IntVect::TheCellVector();
+        const amrex::IntVect& G_nodal_flag = amrex::IntVect::TheCellVector();
         const amrex::BoxArray ba_G_nodal = amrex::convert(ba, G_nodal_flag);
         WarpX::AllocInitMultiFab(pml_G_fp, ba_G_nodal, dm, 3, ngf, "pml_G_fp", 0.0_rt);
     }
@@ -808,16 +809,17 @@ PML::PML (const int lev, const BoxArray& grid_ba, const DistributionMapping& gri
 
         if (m_dive_cleaning)
         {
-            const amrex::BoxArray cba_F_nodal = amrex::convert(cba, amrex::IntVect::TheNodeVector());
+            const amrex::IntVect& F_nodal_flag =
+                (grid_type == GridType::Collocated) ? amrex::IntVect::TheCellVector()
+                                                    : amrex::IntVect::TheNodeVector();
+            const amrex::BoxArray cba_F_nodal = amrex::convert(cba, F_nodal_flag);
             WarpX::AllocInitMultiFab(pml_F_cp, cba_F_nodal, cdm, 3, ngf, "pml_F_cp", 0.0_rt);
         }
 
         if (m_divb_cleaning)
         {
             // TODO Shall we define a separate guard cells parameter ngG?
-            const amrex::IntVect& G_nodal_flag =
-                (grid_type == GridType::Collocated) ? amrex::IntVect::TheNodeVector()
-                                                    : amrex::IntVect::TheCellVector();
+            const amrex::IntVect& G_nodal_flag = amrex::IntVect::TheCellVector();
             const amrex::BoxArray cba_G_nodal = amrex::convert(cba, G_nodal_flag);
             WarpX::AllocInitMultiFab( pml_G_cp, cba_G_nodal, cdm, 3, ngf, "pml_G_cp", 0.0_rt);
         }
