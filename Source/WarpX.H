@@ -87,272 +87,456 @@ class WARPX_EXPORT WarpX
     : public amrex::AmrCore
 {
 public:
+    /**
+     * \brief Get the singleton instance of WarpX.
+     */
     static WarpX& GetInstance ();
 
+    /**
+     * \brief Reset the WarpX singleton instance.
+     */
     static void ResetInstance ();
 
     /**
-     * \brief
-     * This method has to be called at the end of the simulation. It deletes the WarpX instance.
+     * \brief Finalize WarpX and delete the instance.
      */
     static void Finalize();
 
-    /** Destructor */
+    /**
+     * \brief Destructor for WarpX.
+     */
     ~WarpX () override;
 
-    /** Copy constructor */
+    /**
+     * \brief Deleted copy constructor.
+     */
     WarpX ( WarpX const &) = delete;
-    /** Copy operator */
+    /**
+     * \brief Deleted copy assignment operator.
+     */
     WarpX& operator= ( WarpX const & ) = delete;
 
-    /** Move constructor */
+    /**
+     * \brief Deleted move constructor.
+     */
     WarpX ( WarpX && ) = delete;
-    /** Move operator */
+    /**
+     * \brief Deleted move assignment operator.
+     */
     WarpX& operator= ( WarpX && ) = delete;
 
-    static std::string Version (); //!< Version of WarpX executable
-    static std::string PicsarVersion (); //!< Version of PICSAR dependency
+    /**
+     * \brief Get the version of the WarpX executable.
+     */
+    static std::string Version ();
+    /**
+     * \brief Get the version of the PICSAR dependency.
+     */
+    static std::string PicsarVersion ();
 
+    /**
+     * \brief Get the verbosity level.
+     */
     [[nodiscard]] int Verbose () const { return verbose; }
 
+    /**
+     * \brief Get field boundary conditions at the lower domain boundaries.
+     */
     [[nodiscard]] const amrex::Array<FieldBoundaryType,AMREX_SPACEDIM>& GetFieldBoundaryLo () const
     {
         return field_boundary_lo;
     }
 
+    /**
+     * \brief Get field boundary conditions at the upper domain boundaries.
+     */
     [[nodiscard]] const amrex::Array<FieldBoundaryType,AMREX_SPACEDIM>& GetFieldBoundaryHi () const
     {
         return field_boundary_hi;
     }
 
+    /**
+     * \brief Initialize simulation data.
+     */
     void InitData ();
 
+    /**
+     * \brief Evolve the simulation for a given number of steps.
+     * \param numsteps Number of steps to evolve (-1 for all remaining steps)
+     */
     void Evolve (int numsteps = -1);
 
-    /** Push momentum one half step forward to synchronize with position.
-     *  Also sets m_is_synchronized to `true`.
+    /**
+     * \brief Synchronize velocity with position by pushing momentum half a step forward.
      */
     void SynchronizeVelocityWithPosition ();
 
-    //
-    // Functions used by implicit solvers
-    //
+    /**
+     * \brief Synchronize mass matrices for particle containers.
+     */
     void SyncMassMatricesPC ();
+    /**
+     * \brief Save particle states at the start of an implicit step.
+     */
     void SaveParticlesAtImplicitStepStart ();
+    /**
+     * \brief Finish the implicit particle update step.
+     */
     void FinishImplicitParticleUpdate ();
+    /**
+     * \brief Set the electric field and apply boundary conditions.
+     * \param a_E Electric field vector.
+     * \param a_time Current simulation time.
+     */
     void SetElectricFieldAndApplyBCs ( const WarpXSolverVec& a_E, amrex::Real a_time );
+    /**
+     * \brief Update the magnetic field and apply boundary conditions.
+     * \param a_Bn Magnetic field vector.
+     * \param a_thetadt Theta*dt parameter.
+     * \param start_time Start time for update.
+     */
     void UpdateMagneticFieldAndApplyBCs ( ablastr::fields::MultiLevelVectorField const& a_Bn,
                                           amrex::Real a_thetadt, amrex::Real start_time );
+    /**
+     * \brief Advance the source-free spectral field.
+     * \param start_time Start time for advance.
+     */
     void SpectralSourceFreeFieldAdvance ( amrex::Real start_time);
+    /**
+     * \brief Finish magnetic field update and apply boundary conditions.
+     * \param a_Bn Magnetic field vector.
+     * \param a_theta Theta parameter.
+     * \param a_time Current simulation time.
+     */
     void FinishMagneticFieldAndApplyBCs ( ablastr::fields::MultiLevelVectorField const& a_Bn,
                                           amrex::Real a_theta, amrex::Real a_time );
+    /**
+     * \brief Finish implicit field update.
+     * \param Field_fp Field at future time.
+     * \param Field_n Field at current time.
+     * \param theta Theta parameter.
+     */
     void FinishImplicitField ( const ablastr::fields::MultiLevelVectorField& Field_fp,
                                const ablastr::fields::MultiLevelVectorField& Field_n,
                                amrex::Real theta );
+    /**
+     * \brief Compute the right-hand side for the implicit field equation.
+     * \param dt Time step.
+     * \param a_Erhs_vec Output vector for RHS.
+     */
     void ImplicitComputeRHSE (         amrex::Real dt, WarpXSolverVec& a_Erhs_vec);
+    /**
+     * \brief Compute the right-hand side for the implicit field equation at a given level.
+     * \param lev Refinement level.
+     * \param dt Time step.
+     * \param a_Erhs_vec Output vector for RHS.
+     */
     void ImplicitComputeRHSE (int lev, amrex::Real dt, WarpXSolverVec& a_Erhs_vec);
+    /**
+     * \brief Compute the right-hand side for the implicit field equation at a given level and patch type.
+     * \param lev Refinement level.
+     * \param patch_type Patch type.
+     * \param dt Time step.
+     * \param a_Erhs_vec Output vector for RHS.
+     */
     void ImplicitComputeRHSE (int lev, PatchType patch_type, amrex::Real dt, WarpXSolverVec& a_Erhs_vec);
 
+    /**
+     * \brief Get the particle container.
+     */
     MultiParticleContainer& GetPartContainer () { return *mypc; }
+    /**
+     * \brief Get the fluid container.
+     */
     MultiFluidContainer& GetFluidContainer () { return *myfl; }
+    /**
+     * \brief Get the electrostatic solver.
+     */
     ElectrostaticSolver& GetElectrostaticSolver () {return *m_electrostatic_solver;}
+    /**
+     * \brief Get pointer to the HybridPICModel.
+     */
     [[nodiscard]] HybridPICModel * get_pointer_HybridPICModel () const { return m_hybrid_pic_model.get(); }
+    /**
+     * \brief Get the diagnostics container.
+     */
     MultiDiagnostics& GetMultiDiags () {return *multi_diags;}
+    /**
+     * \brief Get the particle boundary buffer.
+     */
     ParticleBoundaryBuffer& GetParticleBoundaryBuffer () { return *m_particle_boundary_buffer; }
+    /**
+     * \brief Get the EB update flag for E field.
+     */
     amrex::Vector<std::array< std::unique_ptr<amrex::iMultiFab>,3 > >& GetEBUpdateEFlag() { return m_eb_update_E; }
+    /**
+     * \brief Get the EB update flag for B field.
+     */
     amrex::Vector<std::array< std::unique_ptr<amrex::iMultiFab>,3 > >& GetEBUpdateBFlag() { return m_eb_update_B; }
+    /**
+     * \brief Get the EB reduce particle shape flag.
+     */
     amrex::Vector< std::unique_ptr<amrex::iMultiFab> > const & GetEBReduceParticleShapeFlag() const { return m_eb_reduce_particle_shape; }
 
     /**
-     * \brief
-     * If an authors' string is specified in the inputfile, this method returns that string.
-     * Otherwise, it returns an empty string.
+     * \brief Get the authors string from the input file, or empty if not specified.
      */
     [[nodiscard]] std::string GetAuthors () const { return m_authors; }
 
-    /** Maximum level up to which the externally defined electric and magnetic fields are initialized.
-     *  The default value is set to the max levels in the simulation.
-     *  if lev > maxlevel_extEMfield_init, the fields on those levels will have a default value of 0
+    /**
+     * \brief Maximum level up to which the externally defined electric and magnetic fields are initialized.
+     * If lev > maxlevel_extEMfield_init, the fields on those levels will have a default value of 0.
      */
     int maxlevel_extEMfield_init;
 
+
     // Algorithms
-    //! Integer that corresponds to the current deposition algorithm (Esirkepov, direct, Vay, Villasenor)
+    /**
+     * \brief Current deposition algorithm used (e.g., Esirkepov, direct, Vay, Villasenor).
+     */
     static inline auto current_deposition_algo = CurrentDepositionAlgo::Default;
-    //! Integer that corresponds to the charge deposition algorithm (only standard deposition)
+    /**
+     * \brief Charge deposition algorithm used (typically standard deposition).
+     */
     static inline auto charge_deposition_algo = ChargeDepositionAlgo::Default;
-    //! Integer that corresponds to the field gathering algorithm (energy-conserving, momentum-conserving)
+    /**
+     * \brief Field gathering algorithm (energy-conserving or momentum-conserving).
+     */
     static inline auto field_gathering_algo = GatheringAlgo::Default;
-    //! Integer that corresponds to the particle push algorithm (Boris, Vay, Higuera-Cary)
+    /**
+     * \brief Particle push algorithm (e.g., Boris, Vay, Higuera-Cary).
+     */
     static inline auto particle_pusher_algo = ParticlePusherAlgo::Default;
-    //! Integer that corresponds to the type of Maxwell solver (Yee, CKC, PSATD, ECT)
+    /**
+     * \brief Maxwell solver type (Yee, CKC, PSATD, ECT).
+     */
     static inline auto electromagnetic_solver_id = ElectromagneticSolverAlgo::Default;
-    //! Integer that corresponds to the evolve scheme (explicit, semi_implicit_em, theta_implicit_em)
+    /**
+     * \brief Evolve scheme (explicit, semi-implicit EM, theta-implicit EM).
+     */
     EvolveScheme evolve_scheme = EvolveScheme::Default;
-    //! Maximum iterations used for self-consistent particle update in implicit particle-suppressed evolve schemes
+    /**
+     * \brief Maximum iterations for self-consistent particle update in implicit schemes.
+     */
     static int max_particle_its_in_implicit_scheme;
-    //! Relative tolerance used for self-consistent particle update in implicit particle-suppressed evolve schemes
+    /**
+     * \brief Relative tolerance for self-consistent particle update in implicit schemes.
+     */
     static amrex::ParticleReal particle_tol_in_implicit_scheme;
-    /** Records a number corresponding to the load balance cost update strategy
-     *  being used (0 or 1 corresponding to timers or heuristic).
+    /**
+     * \brief Load balance cost update strategy (0: timers, 1: heuristic).
      */
     static inline auto load_balance_costs_update_algo = LoadBalanceCostsUpdateAlgo::Default;
-    /** Integer that correspond to macroscopic Maxwell solver algorithm
-     *  (BackwardEuler - 0, Lax-Wendroff - 1)
+    /**
+     * \brief Macroscopic Maxwell solver algorithm (BackwardEuler=0, Lax-Wendroff=1).
      */
     static inline auto macroscopic_solver_algo = MacroscopicSolverAlgo::Default;
-    /** Boundary conditions applied to fields at the lower domain boundaries
-     *  (Possible values PML, Periodic, PEC, PMC, Neumann, Damped, Absorbing Silver-Mueller, None)
+    /**
+     * \brief Field boundary conditions at the lower domain boundaries (PML, Periodic, PEC, PMC, Neumann, Damped, Absorbing Silver-Mueller, None).
      */
     static inline amrex::Array<FieldBoundaryType,AMREX_SPACEDIM> field_boundary_lo;
-
-    /** Boundary conditions applied to fields at the upper domain boundaries
-     *  (Possible values PML, Periodic, PEC, PMC, Neumann, Damped, Absorbing Silver-Mueller, None)
+    /**
+     * \brief Field boundary conditions at the upper domain boundaries (PML, Periodic, PEC, PMC, Neumann, Damped, Absorbing Silver-Mueller, None).
      */
     static inline amrex::Array<FieldBoundaryType,AMREX_SPACEDIM> field_boundary_hi;
-
-    /** Integers that correspond to boundary condition applied to particles at the
-     *  lower domain boundaries
-     *  (0 to 4 correspond to Absorbing, Open, Reflecting, Periodic, Thermal)
+    /**
+     * \brief Particle boundary conditions at the lower domain boundaries (0: Absorbing, 1: Open, 2: Reflecting, 3: Periodic, 4: Thermal).
      */
     static inline amrex::Array<ParticleBoundaryType,AMREX_SPACEDIM> particle_boundary_lo;
-
-    /** Integers that correspond to boundary condition applied to particles at the
-     *  upper domain boundaries
-     *  (0 to 4 correspond to Absorbing, Open, Reflecting, Periodic, Thermal)
+    /**
+     * \brief Particle boundary conditions at the upper domain boundaries (0: Absorbing, 1: Open, 2: Reflecting, 3: Periodic, 4: Thermal).
      */
     static inline amrex::Array<ParticleBoundaryType,AMREX_SPACEDIM> particle_boundary_hi;
 
-    //! Integers that correspond to the time dependency of J (constant, linear)
-    //! and rho (linear, quadratic) for the PSATD algorithm
+
+    /**
+     * \brief Time dependency of J (current) for the PSATD algorithm (e.g., constant, linear).
+     */
     static inline auto time_dependency_J = TimeDependencyJ::Default;
+    /**
+     * \brief Time dependency of rho (charge density) for the PSATD algorithm (e.g., linear, quadratic).
+     */
     static inline auto time_dependency_rho = TimeDependencyRho::Default;
 
-    //! If true, the current is deposited on a nodal grid and then centered onto a staggered grid
-    //! using finite centering of order given by current_centering_nox, current_centering_noy,
-    //! and current_centering_noz
+    /**
+     * \brief If true, deposit current on a nodal grid and center onto a staggered grid using finite centering of order given by current_centering_nox, current_centering_noy, and current_centering_noz.
+     */
     bool do_current_centering = false;
 
-    //! If true, a correction is applied to the current in Fourier space,
-    //  to satisfy the continuity equation and charge conservation
+    /**
+     * \brief If true, apply a correction to the current in Fourier space to satisfy the continuity equation and charge conservation.
+     */
     bool current_correction = true;
 
-    //! If true, the PSATD update equation for E contains both J and rho
-    //! (default is false for standard PSATD and true for Galilean PSATD)
+    /**
+     * \brief If true, the PSATD update equation for E contains both J and rho (default: false for standard PSATD, true for Galilean PSATD).
+     */
     bool update_with_rho = false;
 
-    //! perform field communications in single precision
+    /**
+     * \brief If true, perform field communications in single precision.
+     */
     static bool do_single_precision_comms;
 
-    //! used shared memory algorithm for charge deposition
+    /**
+     * \brief If true, use shared memory algorithm for charge deposition.
+     */
     static bool do_shared_mem_charge_deposition;
 
-    //! use shared memory algorithm for current deposition
+    /**
+     * \brief If true, use shared memory algorithm for current deposition.
+     */
     static bool do_shared_mem_current_deposition;
 
-    //! number of threads to use per block in shared deposition
+    /**
+     * \brief Number of threads to use per block in shared memory deposition.
+     */
     static int shared_mem_current_tpb;
 
-    //! tileSize to use for shared current deposition operations
+    /**
+     * \brief Tile size to use for shared current deposition operations.
+     */
     static amrex::IntVect shared_tilesize;
 
-    //! Whether to fill guard cells when computing inverse FFTs of fields
+    /**
+     * \brief Whether to fill guard cells when computing inverse FFTs of fields.
+     */
     static amrex::IntVect m_fill_guards_fields;
 
-    //! Whether to fill guard cells when computing inverse FFTs of currents
+    /**
+     * \brief Whether to fill guard cells when computing inverse FFTs of currents.
+     */
     static amrex::IntVect m_fill_guards_current;
 
-    //! Solve additional Maxwell equation for F in order to control errors in Gauss' law
-    //! (useful when using current deposition algorithms that are not charge-conserving)
+    /**
+     * \brief If true, solve additional Maxwell equation for F to control errors in Gauss' law (useful for non-charge-conserving current deposition algorithms).
+     */
     static bool do_dive_cleaning;
-    //! Solve additional Maxwell equation for G in order to control errors in magnetic Gauss' law
+    /**
+     * \brief If true, solve additional Maxwell equation for G to control errors in magnetic Gauss' law.
+     */
     static bool do_divb_cleaning;
 
-    //! Order of the particle shape factors (splines) along x
+    /**
+     * \brief Order of the particle shape factors (splines) along x.
+     */
     static int nox;
-    //! Order of the particle shape factors (splines) along y
+    /**
+     * \brief Order of the particle shape factors (splines) along y.
+     */
     static int noy;
-    //! Order of the particle shape factors (splines) along z
+    /**
+     * \brief Order of the particle shape factors (splines) along z.
+     */
     static int noz;
 
-    //! Maximum number of allowed grid crossings for particles
+    /**
+     * \brief Maximum number of allowed grid crossings for particles.
+     */
     static int particle_max_grid_crossings;
 
-    //! Order of finite centering of fields (from staggered grid to nodal grid), along x
+    /**
+     * \brief Order of finite centering of fields (from staggered grid to nodal grid), along x.
+     */
     static int field_centering_nox;
-    //! Order of finite centering of fields (from staggered grid to nodal grid), along y
+    /**
+     * \brief Order of finite centering of fields (from staggered grid to nodal grid), along y.
+     */
     static int field_centering_noy;
-    //! Order of finite centering of fields (from staggered grid to nodal grid), along z
+    /**
+     * \brief Order of finite centering of fields (from staggered grid to nodal grid), along z.
+     */
     static int field_centering_noz;
 
-    //! Number of modes for the RZ multi-mode version
+    /**
+     * \brief Number of azimuthal modes for the RZ multi-mode version.
+     */
     static int n_rz_azimuthal_modes;
-    //! Number of MultiFab components
-    //! (with the RZ multi-mode version, each mode has a real and imaginary component,
-    //! except mode 0 which is purely real: component 0 is mode 0, odd components are
-    //! the real parts, even components are the imaginary parts)
+    /**
+     * \brief Number of MultiFab components. For RZ multi-mode, each mode has real and imaginary components except mode 0, which is purely real (component 0 is mode 0, odd components are real parts, even components are imaginary parts).
+     */
     static int ncomps;
 
-    //! If true, a Numerical Cherenkov Instability (NCI) corrector is applied
-    //! (for simulations using the FDTD Maxwell solver)
+
+    /**
+     * \brief If true, apply Numerical Cherenkov Instability (NCI) corrector (for FDTD Maxwell solver).
+     */
     static bool use_fdtd_nci_corr;
-    //! If true (Galerkin method): The fields are interpolated directly from the staggered
-    //! grid to the particle positions (with reduced interpolation order in the parallel
-    //! direction). This scheme is energy conserving in the limit of infinitely small time
-    //! steps.
-    //! Otherwise, "momentum conserving" (in the same limit): The fields are first
-    //! interpolated from the staggered grid points to the corners of each cell, and then
-    //! from the cell corners to the particle position (with the same order of interpolation
-    //! in all directions). This scheme is momentum conserving in the limit of infinitely
-    //! small time steps.
+    /**
+     * \brief If true (Galerkin method), interpolate fields directly from staggered grid to particle positions (energy conserving for small time steps). Otherwise, use momentum-conserving scheme.
+     */
     static bool galerkin_interpolation;
-
-    //! If true, a bilinear filter is used to smooth charge and currents
+    /**
+     * \brief If true, use bilinear filter to smooth charge and currents.
+     */
     static bool use_filter;
-    //! If true, the bilinear filtering of charge and currents is done in Fourier space
+    /**
+     * \brief If true, perform bilinear filtering of charge and currents in Fourier space.
+     */
     static bool use_kspace_filter;
-    //! If true, a compensation step is added to the bilinear filtering of charge and currents
+    /**
+     * \brief If true, add compensation step to bilinear filtering of charge and currents.
+     */
     static bool use_filter_compensation;
-
-    //! If true, the initial conditions from random number generators are serialized (useful for reproducible testing with OpenMP)
+    /**
+     * \brief If true, serialize initial conditions from random number generators (for reproducible OpenMP tests).
+     */
     static bool serialize_initial_conditions;
-
-    //! Lorentz factor of the boosted frame in which a boosted-frame simulation is run
+    /**
+     * \brief Lorentz factor of the boosted frame for boosted-frame simulations.
+     */
     static amrex::Real gamma_boost;
-    //! Beta value corresponding to the Lorentz factor of the boosted frame of the simulation
+    /**
+     * \brief Beta value corresponding to the Lorentz factor of the boosted frame.
+     */
     static amrex::Real beta_boost;
-    //! Direction of the Lorentz transform that defines the boosted frame of the simulation
+    /**
+     * \brief Direction of the Lorentz transform for the boosted frame.
+     */
     static amrex::Vector<int> boost_direction;
-
-    //! store initial value of zmin_domain_boost because WarpX::computeMaxStepBoostAccelerator
-    //! needs the initial value of zmin_domain_boost, even if restarting from a checkpoint file
+    /**
+     * \brief Initial value of zmin_domain_boost (needed for computeMaxStepBoostAccelerator, even when restarting from checkpoint).
+     */
     static amrex::Real zmin_domain_boost_step_0;
-
-    //! If true, the code will compute max_step from the back transformed diagnostics
+    /**
+     * \brief If true, compute max_step from back-transformed diagnostics.
+     */
     static bool compute_max_step_from_btd;
-
+    /**
+     * \brief If true, enable dynamic scheduling.
+     */
     static bool do_dynamic_scheduling;
+    /**
+     * \brief If true, enable plasma refinement.
+     */
     static bool refine_plasma;
-
+    /**
+     * \brief Intervals for sorting particles.
+     */
     static utils::parser::IntervalsParser sort_intervals;
+    /**
+     * \brief Bin size for particle sorting.
+     */
     static amrex::IntVect sort_bin_size;
-
-    //! If true, particles will be sorted in the order x -> y -> z -> ppc for faster deposition
+    /**
+     * \brief If true, sort particles in x -> y -> z -> ppc order for faster deposition.
+     */
     static bool sort_particles_for_deposition;
-    //! Specifies the type of grid used for the above sorting, i.e. cell-centered, nodal, or mixed
+    /**
+     * \brief Type of grid used for sorting (cell-centered, nodal, or mixed).
+     */
     static amrex::IntVect sort_idx_type;
-
-    //! With mesh refinement, particles located inside a refinement patch, but within
-    //! #n_field_gather_buffer cells of the edge of the patch, will gather the fields
-    //! from the lower refinement level instead of the refinement patch itself
+    /**
+     * \brief Number of buffer cells for field gathering with mesh refinement.
+     */
     static int n_field_gather_buffer;
-    //! With mesh refinement, particles located inside a refinement patch, but within
-    //! #n_current_deposition_buffer cells of the edge of the patch, will deposit their charge
-    //! and current onto the lower refinement level instead of the refinement patch itself
+    /**
+     * \brief Number of buffer cells for current deposition with mesh refinement.
+     */
     static int n_current_deposition_buffer;
-
-    //! Integer that corresponds to the type of grid used in the simulation
-    //! (collocated, staggered, hybrid)
+    /**
+     * \brief Type of grid used in the simulation (collocated, staggered, hybrid).
+     */
     static inline auto grid_type = ablastr::utils::enums::GridType::Default;
 
     // Global rho nodal flag to know about rho index type when rho MultiFab is not allocated
@@ -383,9 +567,9 @@ public:
         const std::string& name,
         std::optional<const int> initial_value = {});
 
-    // Maps of all of the iMultiFabs used (this can include MFs from other classes)
-    // This is a convenience for the Python interface, allowing all iMultiFabs
-    // to be easily referenced from Python.
+    /**
+     * \brief Maps of all iMultiFabs used (can include MultiFabs from other classes). Convenience for Python interface, allowing all iMultiFabs to be easily referenced from Python.
+     */
     std::map<std::string, amrex::iMultiFab *> imultifab_map;
 
     /**
@@ -990,29 +1174,45 @@ protected:
      */
     void InitLevelData (int lev, amrex::Real time);
 
-    //! Use this function to override how DistributionMapping is made.
+    /**
+     * \brief Override how DistributionMapping is made.
+     * \param lev Refinement level
+     * \param ba BoxArray for the level
+     * \return DistributionMapping for the level
+     */
     [[nodiscard]] amrex::DistributionMapping
     MakeDistributionMap (int lev, amrex::BoxArray const& ba) final;
 
-    //! Make a new level from scratch using provided BoxArray and
-    //! DistributionMapping.  Only used during initialization.  Called
-    //! by AmrCoreInitFromScratch.
+    /**
+     * \brief Make a new level from scratch using provided BoxArray and DistributionMapping. Only used during initialization. Called by AmrCoreInitFromScratch.
+     * \param lev Refinement level
+     * \param time Current simulation time
+     * \param new_grids BoxArray for the new level
+     * \param new_dmap DistributionMapping for the new level
+     */
     void MakeNewLevelFromScratch (int lev, amrex::Real time, const amrex::BoxArray& new_grids,
                                           const amrex::DistributionMapping& new_dmap) final;
 
-    //! Make a new level using provided BoxArray and
-    //! DistributionMapping and fill with interpolated coarse level
-    //! data.  Called by AmrCore::regrid.
+    /**
+     * \brief Make a new level using provided BoxArray and DistributionMapping and fill with interpolated coarse level data. Called by AmrCore::regrid.
+     */
     void MakeNewLevelFromCoarse (int /*lev*/, amrex::Real /*time*/, const amrex::BoxArray& /*ba*/,
                                          const amrex::DistributionMapping& /*dm*/) final;
 
-    //! Remake an existing level using provided BoxArray and
-    //! DistributionMapping and fill with existing fine and coarse
-    //! data.  Called by AmrCore::regrid.
+    /**
+     * \brief Remake an existing level using provided BoxArray and DistributionMapping and fill with existing fine and coarse data. Called by AmrCore::regrid.
+     * \param lev Refinement level
+     * \param time Current simulation time
+     * \param ba BoxArray for the level
+     * \param dm DistributionMapping for the level
+     */
     void RemakeLevel (int lev, amrex::Real time, const amrex::BoxArray& ba,
                               const amrex::DistributionMapping& dm) final;
 
-    //! Delete level data.  Called by AmrCore::regrid.
+    /**
+     * \brief Delete level data. Called by AmrCore::regrid.
+     * \param lev Refinement level
+     */
     void ClearLevel (int lev) final;
 
 private:
@@ -1034,7 +1234,9 @@ private:
     // Singleton is used when the code is run from python
     static WarpX* m_instance;
 
-    //! Complete the asynchronous broadcast of signal flags, and initiate a checkpoint if requested
+    /**
+     * \brief Complete the asynchronous broadcast of signal flags, and initiate a checkpoint if requested.
+     */
     void HandleSignals ();
 
     void FillBoundaryB (int lev, PatchType patch_type, amrex::IntVect ng, std::optional<bool> nodal_sync = std::nullopt);
@@ -1165,7 +1367,9 @@ private:
 #   endif
 #endif
 
-    //! Author of an input file / simulation setup
+    /**
+     * \brief Author of the input file or simulation setup.
+     */
     std::string m_authors;
 
     amrex::Vector<int> istep;      // which step?
@@ -1182,11 +1386,17 @@ private:
     std::unique_ptr<MultiParticleContainer> mypc;
     std::unique_ptr<MultiDiagnostics> multi_diags;
 
-    //! Order of finite centering of currents (from nodal grid to staggered grid), along x
+    /**
+     * \brief Order of finite centering of currents (from nodal grid to staggered grid), along x.
+     */
     int m_current_centering_nox  = 2;
-    //! Order of finite centering of currents (from nodal grid to staggered grid), along y
+    /**
+     * \brief Order of finite centering of currents (from nodal grid to staggered grid), along y.
+     */
     int m_current_centering_noy = 2;
-    //! Order of finite centering of currents (from nodal grid to staggered grid), along z
+    /**
+     * \brief Order of finite centering of currents (from nodal grid to staggered grid), along z.
+     */
     int m_current_centering_noz = 2;
 
     // Fluid container
