@@ -1,0 +1,119 @@
+#!Jinja2
+# WarpX Perlmutter GPU Cylc Workflow - Minimal Example
+# Reuses existing perlmutter_gpu_warpx.profile.example for environment setup
+# Submits a WarpX simulation to NERSC Perlmutter GPU nodes
+
+#===============================================================================
+# CONFIGURATION - Customize these values
+#===============================================================================
+{%- set proj = "YOUR_PROJECT_g" %}         # Your NERSC GPU project (must end in _g)
+{%- set warpx_exe = "./warpx" %}           # Path to WarpX executable
+{%- set inputs_file = "inputs" %}          # Input filename
+{%- set num_nodes = 1 %}                   # Number of GPU nodes
+{%- set gpus_per_node = 4 %}               # GPUs per node (Perlmutter has 4 per node)
+{%- set wall_time_min = 10 %}              # Wall time in minutes
+{%- set profile_script = "perlmutter_gpu_warpx.profile.example" %}  # Environment profile
+
+#===============================================================================
+# SCHEDULER
+#===============================================================================
+[scheduler]
+    allow implicit tasks = True
+
+#===============================================================================
+# SCHEDULING
+#===============================================================================
+[scheduling]
+    initial cycle point = now
+    final cycle point = +PT0H
+    cycling mode = integer
+
+    [[graph]]
+        R1 = setup => warpx_gpu_run => check
+
+#===============================================================================
+# RUNTIME TASKS
+#===============================================================================
+[runtime]
+    [[root]]
+        init-script = """
+            # Source the WarpX profile script for environment setup
+            # This reuses perlmutter_gpu_warpx.profile.example instead of duplicating
+            PROFILE_DIR="$(dirname "{{ profile_script }}")"
+            if [ -z "$PROFILE_DIR" ] || [ "$PROFILE_DIR" = "." ]; then
+                PROFILE_DIR="${CYLC_WORKFLOW_SHARE_DIR}"
+            fi
+
+            PROFILE_PATH="${PROFILE_DIR}/{{ profile_script }}"
+
+            if [ -f "$PROFILE_PATH" ]; then
+                # Set project before sourcing profile (profile checks for it)
+                export proj="{{ proj }}"
+                source "$PROFILE_PATH"
+            else
+                echo "WARNING: Profile script not found at $PROFILE_PATH"
+                echo "Falling back to minimal module setup..."
+                module load gpu
+                module load PrgEnv-gnu
+                module load craype-accel-nvidia80
+                module load cudatoolkit
+                export CRAY_ACCEL_TARGET=nvidia80
+                export AMREX_CUDA_ARCH=8.0
+            fi
+        """
+
+    [[setup]]
+        description = "Create output directories"
+        script = """
+            mkdir -p output
+            echo "✓ Setup complete"
+        """
+
+    [[warpx_gpu_run]]
+        description = "Run WarpX on GPU nodes"
+        platform = perlmutter_nersc
+        script = """
+            # Configuration variables (reused from perlmutter_gpu.sbatch logic)
+            EXE="{{ warpx_exe }}"
+            INPUTS="{{ inputs_file }}"
+
+            # GPU-aware MPI settings (from perlmutter_gpu.sbatch)
+            export MPICH_OFI_NIC_POLICY=GPU
+            export OMP_NUM_THREADS=16
+            GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
+
+            # Run with CUDA device mapping (inverse of local task ID)
+            # This matches the logic from perlmutter_gpu.sbatch
+            srun --cpu-bind=cores bash -c "
+                export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
+                ${EXE} ${INPUTS} ${GPU_AWARE_MPI}" \
+              > output/warpx.out 2>&1
+        """
+
+        [[[job]]]
+            batch system = slurm
+            execution time limit = PT00:{{ "%02d" % wall_time_min }}:00
+
+        [[[directives]]]
+            --nodes = {{ num_nodes }}
+            --ntasks-per-node = {{ gpus_per_node }}
+            --gpus-per-node = {{ gpus_per_node }}
+            --cpus-per-task = 32
+            --gpu-bind = none
+            --constraint = gpu
+            --qos = regular
+            --account = {{ proj }}
+            --exclusive = True
+
+    [[check]]
+        description = "Verify WarpX completed successfully"
+        script = """
+            if [ -f "output/warpx.out" ]; then
+                echo "✓ WarpX execution completed"
+                echo "Output:"
+                tail -30 output/warpx.out
+            else
+                echo "✗ Error: Output file not found"
+                exit 1
+            fi
+        """
