@@ -14,7 +14,7 @@ import sys
 
 import numpy as np
 import yt
-from scipy.constants import e, epsilon_0
+from charge_conservation import check_charge_conservation
 
 field_energy = np.loadtxt("diags/reducedfiles/field_energy.txt", skiprows=1)
 particle_energy = np.loadtxt("diags/reducedfiles/particle_energy.txt", skiprows=1)
@@ -42,19 +42,10 @@ data = ds.covering_grid(
     level=0, left_edge=ds.domain_left_edge, dims=ds.domain_dimensions
 )
 
-divE = data["boxlib", "divE"].value
-rho = data["boxlib", "rho"].value
-
-# compute local error in Gauss's law
-drho = (rho - epsilon_0 * divE) / e / n0
-
-# compute RMS on in error on the grid
-nX = drho.shape[0]
-nZ = drho.shape[1]
-drho2_avg = (drho**2).sum() / (nX * nZ)
-drho_rms = np.sqrt(drho2_avg)
-
-print(f"rms error in charge conservation: {drho_rms}")
-print(f"tolerance: {tolerance_rel_charge}")
-
-assert drho_rms < tolerance_rel_charge
+check_charge_conservation(
+    data,
+    tolerance=tolerance_rel_charge,
+    norm="normalized_rms",
+    normalization=n0,
+    title="rms error in charge conservation:",
+)

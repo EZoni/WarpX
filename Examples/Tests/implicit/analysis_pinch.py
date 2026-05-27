@@ -16,7 +16,7 @@ import sys
 
 import numpy as np
 import yt
-from scipy.constants import e, epsilon_0
+from charge_conservation import check_charge_conservation
 
 newton_solver = np.loadtxt("diags/reduced_files/newton_solver.txt", skiprows=1)
 num_steps = newton_solver[-1, 0]
@@ -78,19 +78,12 @@ data = ds.covering_grid(
     level=0, left_edge=ds.domain_left_edge, dims=ds.domain_dimensions
 )
 
-divE = data["boxlib", "divE"].value
-rho = data["boxlib", "rho"].value
-
-# compute local error in Gauss's law
-drho = (rho - epsilon_0 * divE) / e / n0
-
-# compute RMS error in charge conservation on the grid
-# excluding the upper boundary where the insulator is located
-drho_trimmed = drho[:-1, ...]
-Ng = drho_trimmed.size
-drho2_avg = (drho_trimmed**2).sum() / Ng
-drho_rms = np.sqrt(drho2_avg)
 tolerance_rel_charge = 1.0e-12
-print(f"rms error in charge conservation: {drho_rms}")
-print(f"tolerance: {tolerance_rel_charge}")
-assert drho_rms < tolerance_rel_charge
+check_charge_conservation(
+    data,
+    tolerance=tolerance_rel_charge,
+    norm="normalized_rms",
+    normalization=n0,
+    trim=(slice(None, -1), Ellipsis),
+    title="rms error in charge conservation:",
+)

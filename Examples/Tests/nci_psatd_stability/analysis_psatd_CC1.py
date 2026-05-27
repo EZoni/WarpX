@@ -35,7 +35,7 @@ Ex = all_data["boxlib", "Ex"].squeeze().v
 Ey = all_data["boxlib", "Ey"].squeeze().v
 Ez = all_data["boxlib", "Ez"].squeeze().v
 
-# Set reference energy values, and tolerances for numerical stability and charge conservation
+# Set reference energy value and tolerance for numerical stability
 tol_energy = 1e-8
 energy_ref = 66e6
 

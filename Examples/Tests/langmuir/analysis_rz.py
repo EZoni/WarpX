@@ -26,7 +26,7 @@ yt.funcs.mylog.setLevel(50)
 
 import numpy as np
 import post_processing_utils
-from analysis_utils import check_charge_conservation
+from charge_conservation import check_charge_conservation
 from scipy.constants import c, e, epsilon_0, m_e
 
 # this will be the name of the plot file

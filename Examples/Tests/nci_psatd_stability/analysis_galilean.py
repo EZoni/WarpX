@@ -19,6 +19,7 @@ import sys
 import numpy as np
 import scipy.constants as scc
 import yt
+from charge_conservation import check_charge_conservation
 
 yt.funcs.mylog.setLevel(0)
 
@@ -106,11 +107,11 @@ print(f"tol_energy = {tol_energy}")
 assert err_energy < tol_energy
 
 # Check charge conservation (relative L-infinity norm of error) with current correction
-if current_correction:
-    divE = all_data["boxlib", "divE"].squeeze().v
-    rho = all_data["boxlib", "rho"].squeeze().v / scc.epsilon_0
-    err_charge = np.amax(np.abs(divE - rho)) / max(np.amax(divE), np.amax(rho))
-    print("\nCheck charge conservation:")
-    print(f"err_charge = {err_charge}")
-    print(f"tol_charge = {tol_charge}")
-    assert err_charge < tol_charge
+check_charge_conservation(
+    all_data,
+    tolerance=tol_charge,
+    do_check=current_correction,
+    norm="relative_linf_max",
+    title="\nCheck charge conservation:",
+    tolerance_label="tol_charge",
+)

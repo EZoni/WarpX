@@ -8,9 +8,8 @@
 
 import sys
 
-import numpy as np
 import yt
-from scipy.constants import epsilon_0
+from charge_conservation import check_charge_conservation
 
 yt.funcs.mylog.setLevel(50)
 
@@ -22,11 +21,9 @@ ds = yt.load(fn)
 data = ds.covering_grid(
     level=0, left_edge=ds.domain_left_edge, dims=ds.domain_dimensions
 )
-rho = data[("boxlib", "rho")].to_ndarray()
-divE = data[("boxlib", "divE")].to_ndarray()
-error_rel = np.amax(np.abs(divE - rho / epsilon_0)) / np.amax(np.abs(rho / epsilon_0))
 tolerance = 1e-3
-print("Error on charge conservation:")
-print("error_rel = {}".format(error_rel))
-print("tolerance = {}".format(tolerance))
-assert error_rel < tolerance
+check_charge_conservation(
+    data,
+    tolerance=tolerance,
+    title="Error on charge conservation:",
+)
