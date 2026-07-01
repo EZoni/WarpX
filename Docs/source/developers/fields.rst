@@ -143,11 +143,11 @@ For ``c_r > 1``, the implemented sampling stencil is:
    n_p = 2 - s_f,\qquad
    i_m = i_c c_r + \left\lfloor \frac{c_r}{2} \right\rfloor (1-s_c) - (1-s_f).
 
-Thus nodal-to-nodal selects the coincident fine node, nodal-to-cell-centered
-selects the fine node at the coarse-cell center, cell-centered-to-nodal averages
+Thus nodal to nodal selects the coincident fine node, nodal to cell-centered
+selects the fine node at the coarse cell center, cell-centered to nodal averages
 the two fine cell centers adjacent to the coarse node, and
-cell-centered-to-cell-centered averages the two fine cell centers closest to the
-coarse-cell center.
+cell-centered to cell-centered averages the two fine cell centers closest to the
+coarse cell center.
 
 ``ablastr::coarsen::average`` is the conservative fine-to-coarse operator used for
 mesh refinement data transfers. It requires identical fine and coarse staggering
