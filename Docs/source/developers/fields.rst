@@ -115,10 +115,10 @@ Coarsening interpolation helpers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The fine-to-coarse helpers in ``Source/ablastr/coarsen`` implement two different
-operators. In the formulas below, ``i_c`` is the coarse-grid index, ``i_f`` is a
-fine-grid index, ``c_r`` is the integer coarsening ratio, and ``s_f`` and ``s_c``
-are the fine and coarse staggering flags in one direction (``0`` for cell-centered,
-``1`` for nodal). In multiple dimensions, WarpX applies the corresponding 1D
+operators. In the formulas below, :math:`i_c` is the coarse-grid index, :math:`i_f` is a
+fine-grid index, :math:`c_r` is the integer coarsening ratio, and :math:`s_f` and :math:`s_c`
+are the fine and coarse staggering flags in one direction (:math:`0` for cell-centered,
+:math:`1` for nodal). In multiple dimensions, WarpX applies the corresponding 1D
 weights as a tensor product.
 
 ``ablastr::coarsen::sample`` is the I/O downsampling operator used by coarsened
@@ -129,14 +129,14 @@ coarse point, it samples one or two nearby fine points with equal weights:
 
    g_c(i_c) = \frac{1}{n_p} \sum_{i_r=0}^{n_p-1} g_f(i_m+i_r).
 
-For ``c_r = 1``, this reduces to recentering without coarsening:
+For :math:`c_r = 1`, this reduces to recentering without coarsening:
 
 .. math::
 
    n_p = 1 + |s_f-s_c|,\qquad
    i_m = i_c - s_c(1-s_f).
 
-For ``c_r > 1``, the implemented sampling stencil is:
+For :math:`c_r > 1`, the implemented sampling stencil is:
 
 .. math::
 
@@ -171,9 +171,9 @@ and treats values outside the grown fine domain as zero. Its implemented 1D sten
 
    g_c(i_c) = \sum_{i_r=0}^{n_p-1} w_f(i_c,i_m+i_r) g_f(i_m+i_r).
 
-For cell-centered data this is the average over the ``c_r`` fine cells covered by
+For cell-centered data this is the average over the :math:`c_r` fine cells covered by
 the coarse cell. For nodal data it is the triangular, charge-conserving stencil
-over ``2 c_r - 1`` fine nodes.
+over :math:`(2 c_r - 1)` fine nodes.
 
 Filter
 ------
