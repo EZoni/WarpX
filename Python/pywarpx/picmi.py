@@ -62,7 +62,8 @@ def _set_refined_region_inputs(refined_regions):
         pywarpx.amr.max_level = 1
         pywarpx.warpx.fine_tag_lo = refined_regions[0][1]
         pywarpx.warpx.fine_tag_hi = refined_regions[0][2]
-        pywarpx.amr.ref_ratio_vect = refined_regions[0][3]
+        if len(refined_regions[0]) == 4:
+            pywarpx.amr.ref_ratio_vect = refined_regions[0][3]
     else:
         pywarpx.amr.max_level = 0
 
