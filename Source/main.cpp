@@ -15,8 +15,17 @@
 
 #include <AMReX_Print.H>
 
+#include <iostream>
+#include <string_view>
+
 int
 main (int argc, char* argv[]) {
+
+    if (argc > 1 && std::string_view(argv[1]) == "--version") {
+        std::cout << "WarpX " << WarpX::Version() << '\n';
+        return 0;
+    }
+
     warpx::initialization::initialize_external_libraries(argc, argv);
     {
         ABLASTR_PROFILE_VAR("main()", pmain);
