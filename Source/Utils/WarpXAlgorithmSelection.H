@@ -171,21 +171,17 @@ AMREX_ENUM(PushType,
            Default = Explicit);
 
 /** \brief For advanced collision algorithms that split the particle push in substeps */
-AMREX_ENUM(
-    PositionPushType,
-    None,
-    Full,
-    Default = Full
-);
+AMREX_ENUM(PositionPushType,
+           None,
+           Full,
+           Default = Full);
 
 /** \brief For advanced collision algorithms that split the particle push in substeps */
-AMREX_ENUM(
-    MomentumPushType,
-    Full,
-    FirstHalf,
-    SecondHalf,
-    Default = Full
-);
+AMREX_ENUM(MomentumPushType,
+           Full,
+           FirstHalf,
+           SecondHalf,
+           Default = Full);
 
 /** \brief For binary collision algorithms, the strategy to determine
  *  the scattering angle in the center of mass frame */
