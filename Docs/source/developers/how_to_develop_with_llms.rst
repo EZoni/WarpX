@@ -90,6 +90,56 @@ The skill will:
 To add new skills, create a directory under ``.claude/skills/<skill-name>/`` containing a ``SKILL.md`` file that describes the step-by-step procedure.
 
 
+Self-Reviewing a Pull Request
+-----------------------------
+
+As emphasized above, you should carefully review all LLM-generated code *yourself* before requesting a review from other WarpX developers.
+A coding assistant can help with this first pass: it can re-read your own diff with fresh context and flag issues you may have missed.
+This does not replace your own critical review, but it makes that review more effective.
+
+Before using the prompt below, commit your work and make sure your branch is up to date with ``development``, so that the diff the assistant reviews matches what reviewers will see.
+Run it in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
+
+Copy and adapt the following prompt for your local coding assistant:
+
+.. code-block:: text
+
+   Review the changes on my current branch relative to the `development`
+   branch, as if you were a WarpX maintainer reviewing my pull request.
+   Do not make any changes yet; report your findings first.
+
+   Start by reading AGENTS.md for the project conventions, then run
+   `git diff development...HEAD` to see my changes.
+
+   Check the following and report concrete issues with file and line references:
+
+   1. Correctness: logic errors, off-by-one/index mistakes, uninitialized
+      values, incorrect physics or units, wrong sign conventions.
+   2. Dimensionality: does the code handle all relevant builds
+      (1D, 2D/XZ, 3D, RZ) correctly, including the compile-time macros?
+   3. GPU/CPU portability: any particle-to-grid deposition, scatter-add,
+      histogram, or shared-counter loop must use `amrex::For` (not
+      `amrex::ParallelFor`). Flag atomics that do not actually make a
+      `ParallelFor` safe. See Docs/source/developers/portability.rst.
+   4. Backward compatibility: if a user-facing input parameter was removed
+      or renamed, is there a guard in the relevant BackwardCompatibility()?
+   5. Testing: is there a test covering the new feature or bug fix? Is it
+      fast enough for a 2-core CI runner and written portably?
+   6. Style: does the diff follow the C++/Python style in AGENTS.md, and
+      does it avoid reformatting unrelated code?
+   7. Auto-generated files: flag any manual edits to `.pyi` stubs,
+      `dependencies.json`, or `Regression/Checksum/benchmarks_json/*.json`.
+   8. Documentation: are new user-facing parameters or features documented?
+   9. Scope: is anything unrelated to the stated purpose of the PR included?
+
+   For each finding, state the severity (blocking / should-fix / nit) and
+   suggest a concrete fix. End with a short summary of whether this PR looks
+   ready for human review.
+
+Treat the assistant's output as a checklist of things to verify yourself, not as a verdict: it may raise false positives or miss real problems.
+Confirm each finding against the code before acting on it.
+
+
 Documentation Context via MCP Servers
 --------------------------------------
 
