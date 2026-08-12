@@ -87,6 +87,24 @@ The skill will:
 #. Format the entry in the RST style used in the file.
 #. Create a branch, commit the change, and optionally open a pull request.
 
+``/warpx-self-review-pr``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Reviews the changes on your current branch relative to ``development``, as a WarpX maintainer would review a pull request (see the `Self-Reviewing a Pull Request`_ section below).
+
+Usage (in Claude Code):
+
+.. code-block:: text
+
+   /warpx-self-review-pr
+
+The skill will:
+
+#. Read ``AGENTS.md`` for the project conventions.
+#. Fetch the latest upstream ``development`` and diff your branch against it.
+#. Review the diff against a checklist (correctness, algorithmic scaling, dimensionality, GPU/CPU portability, backward compatibility, testing, style, auto-generated files, documentation, scope).
+#. Report concrete findings with file and line references, each with a severity and a suggested fix.
+
 To add new skills, create a directory under ``.claude/skills/<skill-name>/`` containing a ``SKILL.md`` file that describes the step-by-step procedure.
 
 
@@ -100,7 +118,8 @@ This does not replace your own critical review, but it makes that review more ef
 Before using the prompt below, commit your work and make sure your branch is up to date with ``development``, so that the diff the assistant reviews matches what reviewers will see.
 Run it in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
 
-Copy and adapt the following prompt for your local coding assistant:
+In Claude Code, the ``/warpx-self-review-pr`` skill runs this review for you.
+For other assistants, copy and adapt the following prompt:
 
 .. code-block:: text
 
