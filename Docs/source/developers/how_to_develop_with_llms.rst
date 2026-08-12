@@ -121,6 +121,10 @@ Run it in a *fresh* session (not the one that wrote the code): an assistant aske
 In Claude Code, the ``/warpx-self-review-pr`` skill runs this review for you.
 For other assistants, copy and adapt the following prompt:
 
+.. The checklist in the code-block below is duplicated verbatim in
+   .claude/skills/warpx-self-review-pr/SKILL.md (which drives Claude Code).
+   Keep both copies in sync.
+
 .. code-block:: text
 
    Review the changes on my current branch relative to the `development`
