@@ -118,22 +118,25 @@ Copy and adapt the following prompt for your local coding assistant:
 
    1. Correctness: logic errors, off-by-one/index mistakes, uninitialized
       values, incorrect physics or units, wrong sign conventions.
-   2. Dimensionality: does the code handle all relevant builds
+   2. Algorithmic scaling: flag book-keeping or data-structure logic with
+      worse asymptotic complexity than necessary, e.g. an O(N^2) loop over
+      lists where an O(N) or O(N log N) approach exists.
+   3. Dimensionality: does the code handle all relevant builds
       (1D, 2D/XZ, 3D, RZ) correctly, including the compile-time macros?
-   3. GPU/CPU portability: any particle-to-grid deposition, scatter-add,
+   4. GPU/CPU portability: any particle-to-grid deposition, scatter-add,
       histogram, or shared-counter loop must use `amrex::For` (not
       `amrex::ParallelFor`). Flag atomics that do not actually make a
       `ParallelFor` safe. See Docs/source/developers/portability.rst.
-   4. Backward compatibility: if a user-facing input parameter was removed
+   5. Backward compatibility: if a user-facing input parameter was removed
       or renamed, is there a guard in the relevant BackwardCompatibility()?
-   5. Testing: is there a test covering the new feature or bug fix? Is it
+   6. Testing: is there a test covering the new feature or bug fix? Is it
       fast enough for a 2-core CI runner and written portably?
-   6. Style: does the diff follow the C++/Python style in AGENTS.md, and
+   7. Style: does the diff follow the C++/Python style in AGENTS.md, and
       does it avoid reformatting unrelated code?
-   7. Auto-generated files: flag any manual edits to `.pyi` stubs,
+   8. Auto-generated files: flag any manual edits to `.pyi` stubs,
       `dependencies.json`, or `Regression/Checksum/benchmarks_json/*.json`.
-   8. Documentation: are new user-facing parameters or features documented?
-   9. Scope: is anything unrelated to the stated purpose of the PR included?
+   9. Documentation: are new user-facing parameters or features documented?
+   10. Scope: is anything unrelated to the stated purpose of the PR included?
 
    For each finding, state the severity (blocking / should-fix / nit) and
    suggest a concrete fix. End with a short summary of whether this PR looks
