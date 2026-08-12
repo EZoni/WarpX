@@ -109,7 +109,10 @@ Copy and adapt the following prompt for your local coding assistant:
    Do not make any changes yet; report your findings first.
 
    Start by reading AGENTS.md for the project conventions, then run
-   `git diff development...HEAD` to see my changes.
+   `git fetch origin development` followed by
+   `git diff origin/development...HEAD` to see my changes. Fetching first
+   ensures the diff is taken against the latest upstream `development`,
+   not a stale local copy.
 
    Check the following and report concrete issues with file and line references:
 
