@@ -122,6 +122,13 @@ The review is a static reading of the diff: the assistant is asked not to compil
 This keeps the pass fast and avoids spending a long local build on something CI reports anyway.
 The prompt says so explicitly because ``AGENTS.md`` documents how to build and test WarpX, and an assistant reading it for the project conventions would otherwise be inclined to do both.
 
+The prompt also asks the assistant to check AMReX behavior against real source, at the ``commit_amrex`` pinned in ``dependencies.json``, rather than recalling APIs from memory, which is a common source of confident but wrong review findings.
+Reading the pin costs nothing: a clone next to your WarpX checkout can show any file at that commit without changing state, and ``raw.githubusercontent.com`` serves it without a clone at all.
+Local copies are not a substitute, since they drift: a sibling clone tracks AMReX ``development``, and the copy CMake fetched into ``build/_deps/fetchedamrex-src`` is frozen at whatever ``WarpX_amrex_branch`` was cached as, so neither follows a pin update.
+
+What the prompt does *not* ask for is a verdict on whether the code compiles against the pin: CI checks out that commit and builds it with ``-Werror``, which settles signature mismatches and deprecated APIs far more reliably than reading headers.
+The AMReX item on the checklist is therefore limited to what a compiler cannot judge, namely whether the code uses the right AMReX abstraction.
+
 In Claude Code, the ``/warpx-self-review-pr`` skill runs this review for you.
 For other assistants, copy and adapt the following prompt:
 
@@ -150,6 +157,22 @@ For other assistants, copy and adapt the following prompt:
    ensures the diff is taken against the latest upstream `development`,
    not a stale local copy.
 
+   When a finding depends on AMReX behavior, ground it in real source
+   rather than recalling it from memory, and read that source at the commit
+   pinned as `commit_amrex` in `dependencies.json`, which is the AMReX CI
+   builds against. Either way works, and the second needs no clone:
+
+   - `git -C ../amrex show <pin>:Src/...`, if that clone exists and has the
+     commit (run `git -C ../amrex fetch origin` if it does not). Keep it
+     read-only: never check out, switch, or pull in that clone, since it
+     may hold my own work.
+   - `https://raw.githubusercontent.com/AMReX-Codes/amrex/<pin>/Src/...`,
+     which serves any file at that exact commit.
+
+   Do not judge whether the code compiles against the pin: CI does that
+   with `-Werror`. If you cannot reach AMReX source at the pin, fall back
+   to the AMReX documentation and mark the finding as unverified.
+
    Check the following and report concrete issues with file and line references:
 
    1. Correctness: logic errors, off-by-one/index mistakes, uninitialized
@@ -163,17 +186,20 @@ For other assistants, copy and adapt the following prompt:
       histogram, or shared-counter loop must use `amrex::For` (not
       `amrex::ParallelFor`). Flag atomics that do not actually make a
       `ParallelFor` safe. See Docs/source/developers/portability.rst.
-   5. Backward compatibility: if a user-facing input parameter was removed
+   5. AMReX usage: is this the right AMReX abstraction, or does it
+      hand-roll something AMReX already provides? Flag misuse that would
+      still compile, e.g. wrong ghost-cell or index-type conventions.
+   6. Backward compatibility: if a user-facing input parameter was removed
       or renamed, is there a guard in the relevant BackwardCompatibility()?
-   6. Testing: is there a test covering the new feature or bug fix? Judging
+   7. Testing: is there a test covering the new feature or bug fix? Judging
       from the input file and analysis script alone (without running it),
       does it look fast enough for a 2-core CI runner and written portably?
-   7. Style: does the diff follow the C++/Python style in AGENTS.md, and
+   8. Style: does the diff follow the C++/Python style in AGENTS.md, and
       does it avoid reformatting unrelated code?
-   8. Auto-generated files: flag any manual edits to `.pyi` stubs,
+   9. Auto-generated files: flag any manual edits to `.pyi` stubs,
       `dependencies.json`, or `Regression/Checksum/benchmarks_json/*.json`.
-   9. Documentation: are new user-facing parameters or features documented?
-   10. Scope: is anything unrelated to the stated purpose of the PR included?
+   10. Documentation: are new user-facing parameters or features documented?
+   11. Scope: is anything unrelated to the stated purpose of the PR included?
 
    For each finding, state the severity (blocking / should-fix / nit) and
    suggest a concrete fix. End with a short summary of whether this PR looks
