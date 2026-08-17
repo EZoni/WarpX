@@ -118,6 +118,10 @@ This does not replace your own critical review, but it makes that review more ef
 Before using the prompt below, commit your work and make sure your branch is up to date with ``development``, so that the diff the assistant reviews matches what reviewers will see.
 Run it in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
 
+The review is a static reading of the diff: the assistant is asked not to compile the code or run the test suite, since the CI checks do that once the pull request is open.
+This keeps the pass fast and avoids spending a long local build on something CI reports anyway.
+The prompt says so explicitly because ``AGENTS.md`` documents how to build and test WarpX, and an assistant reading it for the project conventions would otherwise be inclined to do both.
+
 In Claude Code, the ``/warpx-self-review-pr`` skill runs this review for you.
 For other assistants, copy and adapt the following prompt:
 
@@ -131,7 +135,16 @@ For other assistants, copy and adapt the following prompt:
    branch, as if you were a WarpX maintainer reviewing my pull request.
    Do not make any changes yet; report your findings first.
 
-   Start by reading AGENTS.md for the project conventions, then run
+   This is a read-only review of the source. Do not configure or compile
+   the code (no `cmake`, no `pip install`) and do not run the test suite
+   (no `ctest`, no analysis scripts): compilation, tests, and checksums are
+   covered by the CI checks that run once the pull request is open. Judge
+   the diff by reading it, not by executing it. The `Build Commands` and
+   `Testing` sections of AGENTS.md describe development work in general and
+   do not apply to this review: ignore them here.
+
+   Start by reading AGENTS.md for the project conventions (style,
+   portability, dimensionality, backward compatibility), then run
    `git fetch origin development` followed by
    `git diff origin/development...HEAD` to see my changes. Fetching first
    ensures the diff is taken against the latest upstream `development`,
@@ -152,8 +165,9 @@ For other assistants, copy and adapt the following prompt:
       `ParallelFor` safe. See Docs/source/developers/portability.rst.
    5. Backward compatibility: if a user-facing input parameter was removed
       or renamed, is there a guard in the relevant BackwardCompatibility()?
-   6. Testing: is there a test covering the new feature or bug fix? Is it
-      fast enough for a 2-core CI runner and written portably?
+   6. Testing: is there a test covering the new feature or bug fix? Judging
+      from the input file and analysis script alone (without running it),
+      does it look fast enough for a 2-core CI runner and written portably?
    7. Style: does the diff follow the C++/Python style in AGENTS.md, and
       does it avoid reformatting unrelated code?
    8. Auto-generated files: flag any manual edits to `.pyi` stubs,

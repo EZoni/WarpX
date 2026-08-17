@@ -13,13 +13,25 @@ It does not replace the author's own critical review.
 For best results, this skill should be run in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
 The author should commit their work and make sure their branch is up to date with `development`, so that the diff the assistant reviews matches what reviewers will see.
 
+The review is a static reading of the diff: do not build the code or run tests as part of it, since compilation and the test suite are covered by the CI checks that run on the open pull request.
+The procedure below says so explicitly because `AGENTS.md` (loaded as project instructions, and read at the start of the review) documents how to build and test WarpX; those instructions are for development work, not for this review.
+
 ## Review procedure
 
 Review the changes on my current branch relative to the `development`
 branch, as if you were a WarpX maintainer reviewing my pull request.
 Do not make any changes yet; report your findings first.
 
-Start by reading AGENTS.md for the project conventions, then run
+This is a read-only review of the source. Do not configure or compile
+the code (no `cmake`, no `pip install`) and do not run the test suite
+(no `ctest`, no analysis scripts): compilation, tests, and checksums are
+covered by the CI checks that run once the pull request is open. Judge
+the diff by reading it, not by executing it. The `Build Commands` and
+`Testing` sections of AGENTS.md describe development work in general and
+do not apply to this review: ignore them here.
+
+Start by reading AGENTS.md for the project conventions (style,
+portability, dimensionality, backward compatibility), then run
 `git fetch origin development` followed by
 `git diff origin/development...HEAD` to see my changes. Fetching first
 ensures the diff is taken against the latest upstream `development`,
@@ -44,8 +56,9 @@ Check the following and report concrete issues with file and line references:
    `ParallelFor` safe. See Docs/source/developers/portability.rst.
 5. Backward compatibility: if a user-facing input parameter was removed
    or renamed, is there a guard in the relevant BackwardCompatibility()?
-6. Testing: is there a test covering the new feature or bug fix? Is it
-   fast enough for a 2-core CI runner and written portably?
+6. Testing: is there a test covering the new feature or bug fix? Judging
+   from the input file and analysis script alone (without running it),
+   does it look fast enough for a 2-core CI runner and written portably?
 7. Style: does the diff follow the C++/Python style in AGENTS.md, and
    does it avoid reformatting unrelated code?
 8. Auto-generated files: flag any manual edits to `.pyi` stubs,
