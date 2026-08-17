@@ -10,11 +10,11 @@ Review the changes on the current branch relative to the `development` branch, a
 This is a first pass that helps the author catch issues before requesting a review from other WarpX developers.
 It does not replace the author's own critical review.
 
-For best results, this skill should be run in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
-The author should commit their work and make sure their branch is up to date with `development`, so that the diff the assistant reviews matches what reviewers will see.
+For best results, this skill should be run in a *fresh* session (not the one that wrote the code). If this session also wrote the code under review, say so up front and weigh your own prior choices skeptically.
+The author should commit their work and make sure their branch is up to date with `development`, so the diff the assistant reviews matches what reviewers will see.
 
-The review is a static reading of the diff: do not build the code or run tests as part of it, since compilation and the test suite are covered by the CI checks that run on the open pull request.
-The procedure below says so explicitly because `AGENTS.md` (loaded as project instructions, and read at the start of the review) documents how to build and test WarpX; those instructions are for development work, not for this review.
+The review is a static reading of the diff: do not build the code or run tests here, since compilation and the test suite are covered by the CI checks that run on the open pull request.
+The procedure below says so explicitly because `AGENTS.md` documents how to build and test WarpX for development work, not for this review.
 
 ## Review procedure
 
@@ -31,16 +31,31 @@ the diff by reading it, not by executing it. The `Build Commands` and
 do not apply to this review: ignore them here.
 
 Start by reading AGENTS.md for the project conventions (style,
-portability, dimensionality, backward compatibility), then run
-`git fetch origin development` followed by
-`git diff origin/development...HEAD` to see my changes. Fetching first
-ensures the diff is taken against the latest upstream `development`,
-not a stale local copy.
+portability, dimensionality, backward compatibility), then identify the
+remote that points at github.com/BLAST-WarpX/warpx with `git remote -v`
+(the WarpX contributing guide names it `mainline`; it may also be
+`origin` or `upstream`). Call it <upstream>, then run
+`git fetch <upstream> development` followed by
+`git diff <upstream>/development...HEAD` to see my changes. Fetching
+first ensures the diff is taken against the latest upstream
+`development`, not a stale local copy.
+
+To learn the intended purpose of the changes, read the branch's commit
+messages (`git log <upstream>/development..HEAD`), and `gh pr view` if a
+pull request is already open. Use the diff to locate the changes, then
+read the full changed files around each hunk before judging them; three
+lines of diff context is rarely enough to judge correctness.
 
 When a finding depends on AMReX behavior, ground it in real source
 rather than recalling it from memory, and read that source at the commit
-pinned as `commit_amrex` in `dependencies.json`, which is the AMReX CI
-builds against. Either way works, and the second needs no clone:
+pinned as `commit_amrex` in `dependencies.json`, which is the AMReX
+version that CI builds against. Either way works, and the second needs
+no clone:
+
+Reading the pin costs nothing: a clone next to your WarpX checkout can
+show any file at that commit without touching your working tree or
+branches, and `raw.githubusercontent.com` serves it without a clone at
+all.
 
 - `git -C ../amrex show <pin>:Src/...`, if that clone exists and has the
   commit (run `git -C ../amrex fetch origin` if it does not). Keep it

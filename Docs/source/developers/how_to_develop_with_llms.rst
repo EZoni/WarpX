@@ -90,7 +90,7 @@ The skill will:
 ``/warpx-self-review-pr``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Reviews the changes on your current branch relative to ``development``, as a WarpX maintainer would review a pull request (see the `Self-Reviewing a Pull Request`_ section below).
+Reviews the changes on your current branch relative to ``development``, as a WarpX maintainer would review a pull request (see the :ref:`Self-Reviewing a Pull Request <developers-llm-self-review>` section below).
 
 Usage (in Claude Code):
 
@@ -102,11 +102,13 @@ The skill will:
 
 #. Read ``AGENTS.md`` for the project conventions.
 #. Fetch the latest upstream ``development`` and diff your branch against it.
-#. Review the diff against a checklist (correctness, algorithmic scaling, dimensionality, GPU/CPU portability, backward compatibility, testing, style, auto-generated files, documentation, scope).
+#. Review the diff against a checklist (correctness, algorithmic scaling, dimensionality, GPU/CPU portability, AMReX usage, backward compatibility, testing, style, auto-generated files, documentation, scope).
 #. Report concrete findings with file and line references, each with a severity and a suggested fix.
 
 To add new skills, create a directory under ``.claude/skills/<skill-name>/`` containing a ``SKILL.md`` file that describes the step-by-step procedure.
 
+
+.. _developers-llm-self-review:
 
 Self-Reviewing a Pull Request
 -----------------------------
@@ -116,14 +118,14 @@ A coding assistant can help with this first pass: it can re-read your own diff w
 This does not replace your own critical review, but it makes that review more effective.
 
 Before using the prompt below, commit your work and make sure your branch is up to date with ``development``, so that the diff the assistant reviews matches what reviewers will see.
-Run it in a *fresh* session (not the one that wrote the code): an assistant asked to review its own work in the same session tends to defend earlier choices rather than scrutinize them.
+Run it in a *fresh* session (not the one that wrote the code). If this session also wrote the code under review, say so up front and weigh your own prior choices skeptically.
 
 The review is a static reading of the diff: the assistant is asked not to compile the code or run the test suite, since the CI checks do that once the pull request is open.
 This keeps the pass fast and avoids spending a long local build on something CI reports anyway.
-The prompt says so explicitly because ``AGENTS.md`` documents how to build and test WarpX, and an assistant reading it for the project conventions would otherwise be inclined to do both.
+The prompt says so explicitly because ``AGENTS.md`` documents how to build and test WarpX for development work, and an assistant reading it for the project conventions would otherwise be inclined to do both.
 
 The prompt also asks the assistant to check AMReX behavior against real source, at the ``commit_amrex`` pinned in ``dependencies.json``, rather than recalling APIs from memory, which is a common source of confident but wrong review findings.
-Reading the pin costs nothing: a clone next to your WarpX checkout can show any file at that commit without changing state, and ``raw.githubusercontent.com`` serves it without a clone at all.
+Reading the pin costs nothing: a clone next to your WarpX checkout can show any file at that commit without touching your working tree or branches, and ``raw.githubusercontent.com`` serves it without a clone at all.
 Local copies are not a substitute, since they drift: a sibling clone tracks AMReX ``development``, and the copy CMake fetched into ``build/_deps/fetchedamrex-src`` is frozen at whatever ``WarpX_amrex_branch`` was cached as, so neither follows a pin update.
 
 What the prompt does *not* ask for is a verdict on whether the code compiles against the pin: CI checks out that commit and builds it with ``-Werror``, which settles signature mismatches and deprecated APIs far more reliably than reading headers.
@@ -151,16 +153,26 @@ For other assistants, copy and adapt the following prompt:
    do not apply to this review: ignore them here.
 
    Start by reading AGENTS.md for the project conventions (style,
-   portability, dimensionality, backward compatibility), then run
-   `git fetch origin development` followed by
-   `git diff origin/development...HEAD` to see my changes. Fetching first
-   ensures the diff is taken against the latest upstream `development`,
-   not a stale local copy.
+   portability, dimensionality, backward compatibility), then identify the
+   remote that points at github.com/BLAST-WarpX/warpx with `git remote -v`
+   (the WarpX contributing guide names it `mainline`; it may also be
+   `origin` or `upstream`). Call it <upstream>, then run
+   `git fetch <upstream> development` followed by
+   `git diff <upstream>/development...HEAD` to see my changes. Fetching
+   first ensures the diff is taken against the latest upstream
+   `development`, not a stale local copy.
+
+   To learn the intended purpose of the changes, read the branch's commit
+   messages (`git log <upstream>/development..HEAD`), and `gh pr view` if a
+   pull request is already open. Use the diff to locate the changes, then
+   read the full changed files around each hunk before judging them; three
+   lines of diff context is rarely enough to judge correctness.
 
    When a finding depends on AMReX behavior, ground it in real source
    rather than recalling it from memory, and read that source at the commit
-   pinned as `commit_amrex` in `dependencies.json`, which is the AMReX CI
-   builds against. Either way works, and the second needs no clone:
+   pinned as `commit_amrex` in `dependencies.json`, which is the AMReX
+   version that CI builds against. Either way works, and the second needs
+   no clone:
 
    - `git -C ../amrex show <pin>:Src/...`, if that clone exists and has the
      commit (run `git -C ../amrex fetch origin` if it does not). Keep it
