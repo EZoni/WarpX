@@ -203,7 +203,7 @@ For other assistants, copy and adapt the following prompt:
       still compile, e.g. wrong ghost-cell or index-type conventions.
    6. Backward compatibility: if a user-facing input parameter was removed
       or renamed, is there a guard in the relevant BackwardCompatibility()?
-   7. Testing: is there a test covering the new feature or bug fix? Judging
+   7. Testing: is there a test covering the new feature? Judging
       from the input file and analysis script alone (without running it),
       does it look fast enough for a 2-core CI runner and written portably?
    8. Style: does the diff follow the C++/Python style in AGENTS.md, and
