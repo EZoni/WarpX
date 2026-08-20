@@ -70,10 +70,6 @@ to the AMReX documentation and mark the finding as unverified.
 
 Check the following and report concrete issues with file and line references:
 
-<!-- NOTE: This checklist is duplicated verbatim in the code-block of
-     Docs/source/developers/how_to_develop_with_llms.rst (which serves
-     assistants other than Claude Code). Keep both copies in sync. -->
-
 1. Correctness: logic errors, off-by-one/index mistakes, uninitialized
    values, incorrect physics or units, wrong sign conventions.
 2. Algorithmic scaling: flag book-keeping or data-structure logic with
