@@ -10,7 +10,6 @@ Here is how to participate to the WarpX development.
 The WarpX project uses [git](https://git-scm.com) for version control.
 If you are new to git, you can follow [this tutorial](https://swcarpentry.github.io/git-novice/).
 
-
 ### What to do when
 
 #### Issues
@@ -32,7 +31,6 @@ Feel free to ping us there!
 
 Open a [pull request](https://github.com/BLAST-WarpX/warpx/pulls) if you want to add a new feature yourself.
 Follow the guide below for more details.
-
 
 Thank you for contributing! 🥰
 
@@ -99,9 +97,9 @@ and do the coding you want.
 
 It is probably a good time to look at the [AMReX documentation](https://amrex-codes.github.io/amrex/docs_html/) and at the Doxygen reference pages:
 
-- WarpX Doxygen: <https://warpx.readthedocs.io/en/latest/_static/doxyhtml>
-- AMReX Doxygen: <https://amrex-codes.github.io/amrex/doxygen>
-- PICSAR Doxygen: (todo)
+* WarpX Doxygen: <https://warpx.readthedocs.io/en/latest/_static/doxyhtml>
+* AMReX Doxygen: <https://amrex-codes.github.io/amrex/doxygen>
+* PICSAR Doxygen: (todo)
 
 Once you are done developing, add the files you created and/or modified to the `git` *staging area* with
 
@@ -109,12 +107,10 @@ Once you are done developing, add the files you created and/or modified to the `
 git add <file_I_created> <and_file_I_modified>
 ```
 
-
 ### Build your changes
 
 If you changed C++ files, then now is a good time to test those changes by compiling WarpX locally.
 Follow the [developer instructions in our manual](https://warpx.readthedocs.io/en/latest/install/cmake.html) to set up a local development environment, then compile and [run](https://warpx.readthedocs.io/en/latest/usage/how_to_run.html) WarpX.
-
 
 ### Commit & push your changes
 
@@ -187,13 +183,13 @@ You can also use the GitHub project tab in your fork to organize the work into s
 A new feature is great, a **working** new feature is even better!
 Please test your code and add your test to the automated test suite.
 It's the way to protect your work from adventurous developers.
-Instructions are given in the [testing section](how_to_test.rst) of our [developer's documentation](https://warpx.readthedocs.io/en/latest/developers/testing.html).
+Instructions are given in the [testing section](#developers-testing) of our [developer's documentation](#developers-testing).
 
 #### Include documentation about your PR
 
 Now, let users know about your new feature by describing its usage in the [WarpX documentation](https://warpx.readthedocs.io).
 Our documentation uses [Sphinx](http://www.sphinx-doc.org/en/master/usage/quickstart.html), and it is located in `Docs/source/`.
-For instance, if you introduce a new runtime parameter in the input file, you can add it to [`Docs/source/running_cpp/parameters.rst`](../usage/parameters.rst).
+For instance, if you introduce a new runtime parameter in the input file, you can add it to [`Docs/source/running_cpp/parameters.rst`](#running-cpp-parameters).
 If Sphinx is installed on your computer, you should be able to generate the html documentation with
 
 ```sh
@@ -206,7 +202,6 @@ for your changes.
 Once your code is ready with documentation and automated test, congratulations!
 You can create the PR (or remove the `[WIP]` tag if you already created it).
 Reviewers will interact with you if they have comments/questions.
-
 
 (developers-contributing-style-conventions)=
 
@@ -260,8 +255,8 @@ Reviewers will interact with you if they have comments/questions.
   This is particularly useful to avoid capturing member variables by value in a lambda function, which causes the whole object to be copied to GPU when running on a GPU-accelerated architecture.
   This convention should be used for all new piece of code, and it should be applied progressively to old code.
 
-- `#include` directives in C++ have a distinct order to avoid bugs, see [the WarpX repo structure](repo_organization.rst) for details
+- `#include` directives in C++ have a distinct order to avoid bugs, see [the WarpX repo structure](#developers-repo-structure) for details
 
-- For all new code, we should avoid relying on `using namespace amrex;` and all amrex types should be prefixed with `amrex::`.
+- For all new code, we should avoid relying on `using namespace amrex;` and all amrex types should be prefixed with *amrex::*.
   Inside limited scopes, AMReX type literals can be included with `using namespace amrex::literals;`.
   Ideally, old code should be modified accordingly.
