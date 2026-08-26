@@ -1,6 +1,6 @@
 # WarpX
 
-[![Code Status development](https://dev.azure.com/BLAST-WarpX/warpx/_apis/build/status/ECP-WarpX.WarpX?branchName=development)](https://dev.azure.com/BLAST-WarpX/warpx/_build/latest?definitionId=1&branchName=development)
+[![Code Status development](https://dev.azure.com/BLAST-WarpX/warpx/_apis/build/status/BLAST-WarpX.WarpX?branchName=development)](https://dev.azure.com/BLAST-WarpX/warpx/_build/latest?definitionId=1&branchName=development)
 [![Nightly Installation Tests](https://dev.azure.com/BLAST-WarpX/warpx/_apis/build/status/ECP-WarpX.Nightly?branchName=nightly&label=nightly%20packages)](https://dev.azure.com/BLAST-WarpX/warpx/_build?definitionId=2)
 [![Documentation Status](https://readthedocs.org/projects/warpx/badge/?version=latest)](https://warpx.readthedocs.io)
 [![CDash](https://img.shields.io/badge/CDash-WarpX-blue?logo=cdash)](https://my.cdash.org/index.php?project=WarpX)
