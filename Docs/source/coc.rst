@@ -1,1 +1,1 @@
-../../CODE_OF_CONDUCT.rst
+../../CODE_OF_CONDUCT.md
