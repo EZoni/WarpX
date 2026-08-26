@@ -47,7 +47,7 @@ That means: no memory leaks, because you cannot forget to ``delete`` them again.
 Why name header files ``.H`` instead of ``.h``?
 -----------------------------------------------
 
-This is just a :ref:`convention that we follow through the code base <developers-contributing-style-conventions>`, which slightly simplifies what we need to parse in our various build systems.
+This is just a `convention that we follow through the code base <contributing.html#developers-contributing-style-conventions>`_, which slightly simplifies what we need to parse in our various build systems.
 We inherited that from AMReX.
 Generally speaking, C++ file endings can be arbitrary, we just keep them consistent to avoid confusion in the code base.
 
