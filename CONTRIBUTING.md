@@ -113,7 +113,7 @@ git add <file_I_created> <and_file_I_modified>
 ### Build your changes
 
 If you changed C++ files, then now is a good time to test those changes by compiling WarpX locally.
-Follow the [developer instructions in our manual](https://warpx.readthedocs.io/en/latest/install/cmake.html) to set up a local development environment, then compile and [run](https://warpx.readthedocs.io/en/latest/usage/how_to_run.html) WarpX.
+Follow the [developer instructions in our manual](../install/cmake.rst) to set up a local development environment, then compile and [run](../usage/how_to_run.rst) WarpX.
 
 
 ### Commit & push your changes
@@ -187,13 +187,13 @@ You can also use the GitHub project tab in your fork to organize the work into s
 A new feature is great, a **working** new feature is even better!
 Please test your code and add your test to the automated test suite.
 It's the way to protect your work from adventurous developers.
-Instructions are given in the [testing section of our developer documentation](https://warpx.readthedocs.io/en/latest/developers/testing.html).
+Instructions are given in the [testing section of our developer documentation](how_to_test.rst).
 
 #### Include documentation about your PR
 
-Now, let users know about your new feature by describing its usage in the [WarpX documentation](https://warpx.readthedocs.io).
+Now, let users know about your new feature by describing its usage in the [WarpX documentation](../index.rst).
 Our documentation uses [Sphinx](https://www.sphinx-doc.org/en/master/usage/quickstart.html), and it is located in `Docs/source/`.
-For instance, if you introduce a new runtime parameter in the input file, you can add it to [`Docs/source/usage/parameters.rst`](https://warpx.readthedocs.io/en/latest/usage/parameters.html).
+For instance, if you introduce a new runtime parameter in the input file, you can add it to [`Docs/source/usage/parameters.rst`](../usage/parameters.rst).
 If Sphinx is installed on your computer, you should be able to generate the html documentation with
 
 ```sh
@@ -260,7 +260,7 @@ Reviewers will interact with you if they have comments/questions.
   This is particularly useful to avoid capturing member variables by value in a lambda function, which causes the whole object to be copied to GPU when running on a GPU-accelerated architecture.
   This convention should be used for all new piece of code, and it should be applied progressively to old code.
 
-- `#include` directives in C++ have a distinct order to avoid bugs; see the [WarpX repository structure](https://warpx.readthedocs.io/en/latest/developers/repo_structure.html) for details.
+- `#include` directives in C++ have a distinct order to avoid bugs; see the [WarpX repository structure](repo_organization.rst) for details.
 
 - For all new code, we should avoid relying on `using namespace amrex;` and all AMReX types should be prefixed with `amrex::`.
   Inside limited scopes, AMReX type literals can be included with `using namespace amrex::literals;`.
