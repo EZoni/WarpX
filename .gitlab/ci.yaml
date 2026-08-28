@@ -38,6 +38,7 @@ NVIDIA-H100:
           -DBUILDNAME=GPU-H100-CUDA-SP                     \
           -DSITE=Frank_UO                                  \
           -DWarpX_COMPUTE=CUDA                             \
+          -DWarpX_DIMS="1;2;3;RZ;RCYLINDER;RSPHERE"        \
           -DWarpX_EB=ON                                    \
           -DWarpX_PYTHON=OFF                               \
           -DCMAKE_CUDA_ARCHITECTURES=90                    \
@@ -51,13 +52,28 @@ NVIDIA-H100:
     - export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
     - export AMREX_DEFAULT_INIT="amrex.the_arena_init_size=0"
     - |
+      GPU_TESTS=(
+        test_1d_langmuir_multi
+        test_2d_refined_injection
+        test_3d_laser_acceleration_btd
+        test_rcylinder_langmuir_multi
+        test_rsphere_langmuir_multi
+        test_rz_embedded_boundary_diffraction
+      )
+      # Join the test names with "|" to form regex alternatives.
+      GPU_TESTS_REGEX=""
+      for test_name in "${GPU_TESTS[@]}"; do
+        GPU_TESTS_REGEX+="${GPU_TESTS_REGEX:+|}${test_name}"
+      done
+      # Match all generated stages (e.g., <test_name>.run, <test_name>.analysis, etc.).
+      GPU_TESTS_REGEX="^(${GPU_TESTS_REGEX})\."
+      echo "Resolved GPU test regex: ${GPU_TESTS_REGEX}"
+      ctest --test-dir build -N -R "${GPU_TESTS_REGEX}"
       if [[ "${CI_COMMIT_BRANCH}" == "development" ]]; then
         # run tests and submit results to CDash as Experimental
-        ctest --test-dir build -R test_3d_laser_acceleration_btd \
-          --output-on-failure --no-tests=error -D ExperimentalTest -D ExperimentalSubmit
+        ctest --test-dir build -R "${GPU_TESTS_REGEX}" --output-on-failure -D ExperimentalTest -D ExperimentalSubmit
       else
-        ctest --test-dir build -R test_3d_laser_acceleration_btd \
-          --output-on-failure --no-tests=error
+        ctest --test-dir build -R "${GPU_TESTS_REGEX}" --output-on-failure
       fi
 
 AMD-MI300:
@@ -80,6 +96,7 @@ AMD-MI300:
           -DSITE=Frank_UO                              \
           -DAMReX_AMD_ARCH=gfx942                      \
           -DWarpX_COMPUTE=HIP                          \
+          -DWarpX_DIMS="1;2;3;RZ;RCYLINDER;RSPHERE"    \
           -DWarpX_EB=ON                                \
           -DWarpX_PYTHON=OFF                           \
           -DWarpX_MPI=ON                               \
@@ -91,13 +108,28 @@ AMD-MI300:
     - export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
     - export AMREX_DEFAULT_INIT="amrex.the_arena_init_size=0"
     - |
+      GPU_TESTS=(
+        test_1d_langmuir_multi
+        test_2d_refined_injection
+        test_3d_laser_acceleration_btd
+        test_rcylinder_langmuir_multi
+        test_rsphere_langmuir_multi
+        test_rz_embedded_boundary_diffraction
+      )
+      # Join the test names with "|" to form regex alternatives.
+      GPU_TESTS_REGEX=""
+      for test_name in "${GPU_TESTS[@]}"; do
+        GPU_TESTS_REGEX+="${GPU_TESTS_REGEX:+|}${test_name}"
+      done
+      # Match all generated stages (e.g., <test_name>.run, <test_name>.analysis, etc.).
+      GPU_TESTS_REGEX="^(${GPU_TESTS_REGEX})\."
+      echo "Resolved GPU test regex: ${GPU_TESTS_REGEX}"
+      ctest --test-dir build -N -R "${GPU_TESTS_REGEX}"
       if [[ "${CI_COMMIT_BRANCH}" == "development" ]]; then
         # run tests and submit results to CDash as Experimental
-        ctest --test-dir build -R test_3d_laser_acceleration_btd \
-          --output-on-failure --no-tests=error -D ExperimentalTest -D ExperimentalSubmit
+        ctest --test-dir build -R "${GPU_TESTS_REGEX}" --output-on-failure -D ExperimentalTest -D ExperimentalSubmit
       else
-        ctest --test-dir build -R test_3d_laser_acceleration_btd \
-          --output-on-failure --no-tests=error
+        ctest --test-dir build -R "${GPU_TESTS_REGEX}" --output-on-failure
       fi
 
 Intel-PVC:
