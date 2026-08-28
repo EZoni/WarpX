@@ -29,12 +29,14 @@
         git+https://github.com/icl-utk-edu/blaspp.git \
         -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache) \
         -DCMAKE_CXX_STANDARD=20                       \
+        -Dgpu_backend=${BLASPP_GPU_BACKEND:-auto}     \
         -Duse_openmp=OFF -Dbuild_tests=OFF
       # LAPACK++
       cmake-easyinstall --prefix=/usr/local             \
         git+https://github.com/icl-utk-edu/lapackpp.git \
         -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache)   \
         -DCMAKE_CXX_STANDARD=20                         \
+        -Dgpu_backend=${BLASPP_GPU_BACKEND:-auto}       \
         -Duse_cmake_find_lapack=ON -Dbuild_tests=OFF
     # Dependencies required for analysis and checksums.
     # Remove system copy of Matplotlib to avoid conflict
@@ -95,15 +97,17 @@ NVIDIA-H100:
 
 AMD-MI300:
   extends: .install-dependencies
+  variables:
+    BLASPP_GPU_BACKEND: hip
+    ROCM_PATH: /opt/rocm-6.4.3
+    HIP_PATH: ${ROCM_PATH}
+    HIP_CLANG_PATH: ${ROCM_PATH}/llvm/bin
+    CMAKE_PREFIX_PATH: "${ROCM_PATH}:${CMAKE_PREFIX_PATH}"
   tags: [amd-mi300]
   image: rocm/dev-ubuntu-24.04:6.4.3-complete
   script:
-    - export ROCM_PATH=/opt/rocm-6.4.3
     - export PATH=$ROCM_PATH/bin:$ROCM_PATH/llvm/bin:$PATH
     - export LD_LIBRARY_PATH=$ROCM_PATH/lib:$ROCM_PATH/lib64:$LD_LIBRARY_PATH
-    - export HIP_PATH=$ROCM_PATH
-    - export HIP_CLANG_PATH=$ROCM_PATH/llvm/bin
-    - export CMAKE_PREFIX_PATH=$ROCM_PATH:$CMAKE_PREFIX_PATH
     - |
       cmake -S . -B build                              \
           -DCMAKE_C_COMPILER=$(which clang)            \
