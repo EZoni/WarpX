@@ -29,13 +29,13 @@
         git+https://github.com/icl-utk-edu/blaspp.git \
         -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache) \
         -DCMAKE_CXX_STANDARD=20                       \
-        -Duse_openmp=OFF -Dbuild_tests=OFF -DCMAKE_VERBOSE_MAKEFILE=ON
+        -Duse_openmp=OFF -Dbuild_tests=OFF
       # LAPACK++
       cmake-easyinstall --prefix=/usr/local             \
         git+https://github.com/icl-utk-edu/lapackpp.git \
         -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache)   \
         -DCMAKE_CXX_STANDARD=20                         \
-        -Duse_cmake_find_lapack=ON -Dbuild_tests=OFF -DCMAKE_VERBOSE_MAKEFILE=ON
+        -Duse_cmake_find_lapack=ON -Dbuild_tests=OFF
     # Dependencies required for analysis and checksums.
     # Remove system copy of Matplotlib to avoid conflict
     # with the version set in the requirements file, see
@@ -51,7 +51,6 @@ NVIDIA-H100:
   script:
     - |
       cmake -S . -B build                                  \
-          -DCMAKE_VERBOSE_MAKEFILE=ON                      \
           -DBUILDNAME=GPU-H100-CUDA-DP                     \
           -DSITE=Frank_UO                                  \
           -DWarpX_COMPUTE=CUDA                             \
@@ -109,7 +108,6 @@ AMD-MI300:
       cmake -S . -B build                              \
           -DCMAKE_C_COMPILER=$(which clang)            \
           -DCMAKE_CXX_COMPILER=$(which clang++)        \
-          -DCMAKE_VERBOSE_MAKEFILE=ON                  \
           -DBUILDNAME=GPU-MI300-HIP-DP                 \
           -DSITE=Frank_UO                              \
           -DAMReX_AMD_ARCH=gfx942                      \
@@ -166,7 +164,6 @@ Intel-PVC:
           -DBUILD_SHARED_LIBS=ON                \
           -DBUILDNAME=GPU-PVC-SYCL-DP           \
           -DSITE=Frank_UO                       \
-          -DCMAKE_VERBOSE_MAKEFILE=ON           \
           -DCMAKE_C_COMPILER=$(which icx)       \
           -DCMAKE_CXX_COMPILER=$(which icpx)    \
           -DCMAKE_CXX_FLAGS="-fp-model=precise" \
