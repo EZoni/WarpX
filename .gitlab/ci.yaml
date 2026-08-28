@@ -52,7 +52,7 @@ NVIDIA-H100:
     - |
       cmake -S . -B build                                  \
           -DCMAKE_VERBOSE_MAKEFILE=ON                      \
-          -DBUILDNAME=GPU-H100-CUDA-SP                     \
+          -DBUILDNAME=GPU-H100-CUDA-DP                     \
           -DSITE=Frank_UO                                  \
           -DWarpX_COMPUTE=CUDA                             \
           -DWarpX_DIMS="1;2;3;RZ;RCYLINDER;RSPHERE"        \
@@ -60,7 +60,8 @@ NVIDIA-H100:
           -DWarpX_PYTHON=OFF                               \
           -DCMAKE_CUDA_ARCHITECTURES=90                    \
           -DWarpX_OPENPMD=ON                               \
-          -DWarpX_PRECISION=SINGLE                         \
+          -DWarpX_PRECISION=DOUBLE                         \
+          -DWarpX_PARTICLE_PRECISION=DOUBLE                \
           -DWarpX_FFT=ON                                   \
           -DAMReX_CUDA_ERROR_CROSS_EXECUTION_SPACE_CALL=ON \
           -DAMReX_CUDA_ERROR_CAPTURE_THIS=ON
@@ -109,7 +110,7 @@ AMD-MI300:
           -DCMAKE_C_COMPILER=$(which clang)            \
           -DCMAKE_CXX_COMPILER=$(which clang++)        \
           -DCMAKE_VERBOSE_MAKEFILE=ON                  \
-          -DBUILDNAME=GPU-MI300-HIP-SP                 \
+          -DBUILDNAME=GPU-MI300-HIP-DP                 \
           -DSITE=Frank_UO                              \
           -DAMReX_AMD_ARCH=gfx942                      \
           -DWarpX_COMPUTE=HIP                          \
@@ -118,7 +119,8 @@ AMD-MI300:
           -DWarpX_PYTHON=OFF                           \
           -DWarpX_MPI=ON                               \
           -DWarpX_OPENPMD=ON                           \
-          -DWarpX_PRECISION=SINGLE                     \
+          -DWarpX_PRECISION=DOUBLE                     \
+          -DWarpX_PARTICLE_PRECISION=DOUBLE            \
           -DWarpX_FFT=ON
     - cmake --build build -j 16
     - export OMPI_ALLOW_RUN_AS_ROOT=1
@@ -162,7 +164,7 @@ Intel-PVC:
     - |
       cmake -S . -B build                       \
           -DBUILD_SHARED_LIBS=ON                \
-          -DBUILDNAME=GPU-PVC-SYCL-MP           \
+          -DBUILDNAME=GPU-PVC-SYCL-DP           \
           -DSITE=Frank_UO                       \
           -DCMAKE_VERBOSE_MAKEFILE=ON           \
           -DCMAKE_C_COMPILER=$(which icx)       \
@@ -177,7 +179,7 @@ Intel-PVC:
           -DWarpX_MPI=ON                        \
           -DWarpX_OPENPMD=ON                    \
           -DWarpX_PRECISION=DOUBLE              \
-          -DWarpX_PARTICLE_PRECISION=SINGLE
+          -DWarpX_PARTICLE_PRECISION=DOUBLE
     - cmake --build build -j 16
     - export AMREX_DEFAULT_INIT="amrex.the_arena_init_size=0"
     - |
