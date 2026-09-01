@@ -108,69 +108,65 @@ namespace ScatteringUtils {
      * \brief Sample the cosine of the fusion scattering angle from a coefficient
      * table, linearly interpolating the coefficients in energy.
      *
-     * @param[in] a_An table of anisotropic polynomial coefficients
+     * The probability distribution is expressed in terms of Legendre coefficients
+     * \f$A_l\f$ as
+     * \f$f(\mu) = 1/2 + \sum_{l=1}^L (2l+1) A_l P_l(\mu)/2\f$.
+     *
+     * @param[in] a_Al table of anisotropic Legendre coefficients
      * @param[in] a_energy_MeV center-of-mass kinetic energy in MeV
      * @param[in] a_U uniform random number in [0,1]
      */
     AMREX_GPU_HOST_DEVICE AMREX_INLINE
     amrex::ParticleReal getRandomCosThetaAnisotropic (
-        AnisotropicCoefficientTable const& a_An,
+        AnisotropicCoefficientTable const& a_Al,
         amrex::ParticleReal const a_energy_MeV,
         amrex::ParticleReal const a_U)
     {
         using namespace amrex::literals;
 
-        amrex::ParticleReal x = 0.0_prt;
-        amrex::ParticleReal f, dfdx, sum_f, sum_dfdx;
-        constexpr amrex::ParticleReal rel_tol = 1.0e-8_prt;
+        constexpr amrex::ParticleReal tol = 1.0e-8_prt;
         constexpr int iter_max = 100;
+        int const L = a_Al.m_num_coefficients - 1;
 
-        // Precompute normalisation sums over even/odd-index coefficients:
-        // alpha_even = sum_{i even} A_i/(i+1), alpha_odd = sum_{i odd} A_i/(i+1)
-        // These define the CDF normalisation (cf. Higginson eq. 36-42).
-        amrex::ParticleReal alpha_even = 0.0_prt;
-        amrex::ParticleReal alpha_odd = 0.0_prt;
-        for (int i = 0; i < a_An.m_num_coefficients; ++i) {
-            auto const coeff = a_An.getCoefficient(a_energy_MeV, i);
-            auto const denom = static_cast<amrex::ParticleReal>(i + 1);
-            if (i % 2 == 0) {
-                alpha_even += coeff / denom;
-            } else {
-                alpha_odd += coeff / denom;
+        amrex::ParticleReal mu = 0.0_prt;
+
+        for (int iter = 0; iter < iter_max; ++iter) {
+            amrex::ParticleReal fmu = 0.5_prt;
+            amrex::ParticleReal Fmu = 0.5_prt * (mu + 1.0_prt);
+
+            // Generate P_l(mu) in place to keep this routine GPU-callable.
+            amrex::ParticleReal P_l_minus_one = 1.0_prt;
+            amrex::ParticleReal P_l = mu;
+            for (int l = 1; l <= L; ++l) {
+                auto const l_prt = static_cast<amrex::ParticleReal>(l);
+                amrex::ParticleReal const P_l_plus_one =
+                    ((2.0_prt * l_prt + 1.0_prt) * mu * P_l
+                     - l_prt * P_l_minus_one) / (l_prt + 1.0_prt);
+                amrex::ParticleReal const coefficient =
+                    a_Al.getCoefficient(a_energy_MeV, l);
+
+                fmu += (l_prt + 0.5_prt) * coefficient * P_l;
+                Fmu += 0.5_prt * coefficient * (P_l_plus_one - P_l_minus_one);
+
+                P_l_minus_one = P_l;
+                P_l = P_l_plus_one;
+            }
+
+            amrex::ParticleReal const residual = Fmu - a_U;
+            if (std::abs(residual) < tol) {
+                return mu;
+            }
+
+            amrex::ParticleReal const dmu = residual / fmu;
+            mu -= dmu;
+            mu = amrex::max(-1.0_prt, amrex::min(1.0_prt, mu));
+
+            if (std::abs(dmu) < tol) {
+                return mu;
             }
         }
 
-        // Newton–Raphson iteration to invert the CDF: find x in (-1,1) such that CDF(x) = a_U
-        amrex::ParticleReal rel_diff = 1.0_prt;
-        int iter = 0;
-        while (rel_diff > rel_tol && iter < iter_max) {
-            sum_f = 0.0_prt;    // accumulates CDF numerator polynomial evaluated at x
-            sum_dfdx = 0.0_prt; // accumulates its derivative (= the PDF numerator)
-
-            amrex::ParticleReal x_power_f = x;         // x^(i+1) term for the CDF sum
-            amrex::ParticleReal x_power_dfdx = 1.0_prt; // x^i term for the PDF sum
-            for (int i = 0; i < a_An.m_num_coefficients; ++i) {
-                auto const coeff = a_An.getCoefficient(a_energy_MeV, i);
-                sum_f += coeff / static_cast<amrex::ParticleReal>(i + 1) * x_power_f;
-                sum_dfdx += coeff * x_power_dfdx;
-                x_power_f *= x;
-                x_power_dfdx *= x;
-            }
-
-            f = a_U - 0.5_prt * (1.0_prt + alpha_odd / alpha_even) + 0.5_prt * sum_f / alpha_even; // residual: CDF(x) - a_U
-            dfdx = 0.5_prt * sum_dfdx / alpha_even; // derivative of residual (PDF)
-            if (std::abs(dfdx) <= rel_tol) {
-                break; // flat PDF: no useful Newton step
-            }
-
-            amrex::ParticleReal const delta = f / dfdx; // Newton step
-            x -= delta;
-            x = amrex::max(-1.0_prt + rel_tol, amrex::min(1.0_prt - rel_tol, x)); // clamp to open interval
-            rel_diff = std::abs(delta);
-            ++iter;
-        }
-
-        return x;
+        return mu;
     }
 }
 
