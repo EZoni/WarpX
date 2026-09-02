@@ -18,21 +18,34 @@ REACTION_CONFIG = {
     "DD": {
         "e_min": 0.0,
         "e_max": 15.0,
-        "output": "dd_anisotropic_neutron_spectrum.png",
-        "test_name": "test_3d_deuterium_deuterium_fusion_anisotropic_beam_target",
+        "output": "deuterium_deuterium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [0.0, 5.0, 10.0, 15.0],
         "scale": 1.0,
     },
     "DT": {
         "e_min": 10.0,
         "e_max": 30.0,
-        "output": "dt_anisotropic_neutron_spectrum.png",
-        "test_name": "test_3d_deuterium_tritium_fusion_anisotropic_beam_target",
+        "output": "deuterium_tritium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [10.0, 15.0, 20.0, 25.0, 30.0],
         "scale": 2.6,
     },
 }
-BEAM_SPEEDS_PERCENT = [1, 5, 10]
+
+# Reference values obtained with the fixed random seed in the input files. These
+# are integral observables, with intentionally broad tolerances for portability
+# across compute backends and particle precisions.
+REFERENCE_METRICS = {
+    "DD": {
+        1: {"mean_energy": 2.4961, "std_energy": 0.21466, "mean_cos_theta": 0.04312},
+        5: {"mean_energy": 3.6232, "std_energy": 1.3961, "mean_cos_theta": 0.15298},
+        10: {"mean_energy": 7.1341, "std_energy": 3.8885, "mean_cos_theta": 0.21013},
+    },
+    "DT": {
+        1: {"mean_energy": 14.0825, "std_energy": 0.37748, "mean_cos_theta": 0.01812},
+        5: {"mean_energy": 15.5449, "std_energy": 1.9861, "mean_cos_theta": 0.13423},
+        10: {"mean_energy": 19.9295, "std_energy": 4.8190, "mean_cos_theta": 0.20604},
+    },
+}
 
 
 def parse_reaction(value):
@@ -53,58 +66,56 @@ def parse_args():
     parser.add_argument("--reaction", type=parse_reaction, default="DD")
     parser.add_argument("-o", "--output")
     parser.add_argument("--labels", nargs="+")
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        help="plot all supplied diagnostics after validating them",
+    )
     args = parser.parse_args(argv)
 
     if args.output is None:
         args.output = REACTION_CONFIG[args.reaction]["output"]
+    else:
+        args.plot = True
 
     return args
 
 
-def discover_diag_dirs(config):
-    """Find completed outputs from this reaction's sibling CTest runs."""
-    run_root = Path.cwd().parent
-    test_name = config["test_name"]
-    diag_dirs = []
-    for speed in BEAM_SPEEDS_PERCENT:
-        diag_dir = run_root / f"{test_name}_{speed}pc" / "diags" / "diag1"
-        if diag_dir.is_dir() and any(diag_dir.glob("openpmd_*")):
-            diag_dirs.append(diag_dir)
-
-    # Preserve the command-line script's original single-run behavior outside
-    # a CTest run directory.
-    if not diag_dirs:
-        diag_dirs = [Path("diags/diag1")]
-    return diag_dirs
-
-
-def infer_label(diag_dir):
+def find_used_inputs(diag_dir):
     path = Path(diag_dir)
-    # Prefer the beam velocity encoded in directory names such as run_5pc.
-    for part in reversed(path.parts):
-        match = re.search(r"(\d+)pc", part)
-        if match:
-            return rf"$u/c = {match.group(1)}\%$"
-
-    # Fall back to the input deck recorded with the diagnostics.
     for input_path in [
         path / "warpx_used_inputs",
         path.parent / "warpx_used_inputs",
         path.parent.parent / "warpx_used_inputs",
     ]:
-        if not input_path.exists():
-            continue
-        text = input_path.read_text()
-        match = re.search(
-            r"deuterium_beam\.momentum_function_uz\(x,y,z\)\s*=\s*"
-            r"([+-]?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)",
-            text,
-        )
-        if match:
-            percent = 100.0 * float(match.group(1))
-            return rf"$u/c = {percent:g}\%$"
+        if input_path.exists():
+            return input_path
+    raise AssertionError(f"Could not find warpx_used_inputs for {diag_dir}.")
 
-    return path.parent.name if path.name == "diag1" else path.name
+
+def infer_beam_speed_percent(diag_dir):
+    text = find_used_inputs(diag_dir).read_text()
+    match = re.search(
+        r"deuterium_beam\.momentum_function_uz\(x,y,z\)\s*=\s*"
+        r"([+-]?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)",
+        text,
+    )
+    assert match, f"Could not determine the beam momentum for {diag_dir}."
+    speed_percent = 100.0 * float(match.group(1))
+    rounded_speed = round(speed_percent)
+    assert np.isclose(speed_percent, rounded_speed), (
+        f"Unsupported beam momentum u/c = {speed_percent:g}% in {diag_dir}."
+    )
+    return rounded_speed
+
+
+def infer_label(diag_dir):
+    speed_percent = infer_beam_speed_percent(diag_dir)
+    return rf"$u/c = {speed_percent:g}\%$"
+
+
+def weighted_mean(values, weights):
+    return np.sum(weights * values) / np.sum(weights)
 
 
 def get_neutron_spectrum(diag_dir):
@@ -124,6 +135,50 @@ def get_neutron_spectrum(diag_dir):
     cos_theta = np.divide(uz, u, out=np.zeros_like(uz), where=u > 0.0)
     theta_deg = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
     return energy_MeV, theta_deg, w
+
+
+def validate_neutron_spectrum(diag_dir, reaction):
+    energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir)
+    assert energy_MeV.size >= 1000, (
+        f"Too few neutron macroparticles ({energy_MeV.size}) in {diag_dir}."
+    )
+    assert np.all(np.isfinite(energy_MeV))
+    assert np.all(np.isfinite(theta_deg))
+    assert np.all(np.isfinite(w)) and np.all(w > 0.0)
+
+    cos_theta = np.cos(np.radians(theta_deg))
+    mean_energy = weighted_mean(energy_MeV, w)
+    std_energy = np.sqrt(weighted_mean((energy_MeV - mean_energy) ** 2, w))
+    mean_cos_theta = weighted_mean(cos_theta, w)
+    metrics = {
+        "mean_energy": mean_energy,
+        "std_energy": std_energy,
+        "mean_cos_theta": mean_cos_theta,
+    }
+
+    speed_percent = infer_beam_speed_percent(diag_dir)
+    assert speed_percent in REFERENCE_METRICS[reaction], (
+        f"No reference metrics for u/c = {speed_percent:g}%."
+    )
+    reference = REFERENCE_METRICS[reaction][speed_percent]
+    np.testing.assert_allclose(
+        [metrics["mean_energy"], metrics["std_energy"]],
+        [reference["mean_energy"], reference["std_energy"]],
+        rtol=0.05,
+        atol=0.0,
+    )
+    np.testing.assert_allclose(
+        metrics["mean_cos_theta"],
+        reference["mean_cos_theta"],
+        rtol=0.0,
+        atol=0.03,
+    )
+    print(
+        f"{reaction}, u/c = {speed_percent:g}%: "
+        f"mean energy = {mean_energy:.6g} MeV, "
+        f"energy std. dev. = {std_energy:.6g} MeV, "
+        f"mean cos(theta) = {mean_cos_theta:.6g}"
+    )
 
 
 def plot_neutron_spectra(diag_dirs, labels, config, output):
@@ -196,21 +251,25 @@ def plot_neutron_spectra(diag_dirs, labels, config, output):
 def main():
     args = parse_args()
     if not args.diag_dirs:
-        args.diag_dirs = discover_diag_dirs(REACTION_CONFIG[args.reaction])
+        args.diag_dirs = [Path("diags/diag1")]
 
-    labels = args.labels
-    if labels is None:
-        labels = [infer_label(diag_dir) for diag_dir in args.diag_dirs]
-    assert len(labels) == len(args.diag_dirs), (
-        "Number of labels must match diagnostics."
-    )
+    for diag_dir in args.diag_dirs:
+        validate_neutron_spectrum(diag_dir, args.reaction)
 
-    plot_neutron_spectra(
-        args.diag_dirs,
-        labels,
-        REACTION_CONFIG[args.reaction],
-        args.output,
-    )
+    if args.plot:
+        labels = args.labels
+        if labels is None:
+            labels = [infer_label(diag_dir) for diag_dir in args.diag_dirs]
+        assert len(labels) == len(args.diag_dirs), (
+            "Number of labels must match diagnostics."
+        )
+
+        plot_neutron_spectra(
+            args.diag_dirs,
+            labels,
+            REACTION_CONFIG[args.reaction],
+            args.output,
+        )
 
 
 if __name__ == "__main__":

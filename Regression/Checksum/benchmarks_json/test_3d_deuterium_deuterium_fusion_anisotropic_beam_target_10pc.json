@@ -1,31 +1,4 @@
 {
-  "deuterium_beam": {
-    "particle_momentum_x": 0.0,
-    "particle_momentum_y": 0.0,
-    "particle_momentum_z": 2.165143374361813e-13,
-    "particle_position_x": 6.4796228323230265,
-    "particle_position_y": 9.720019869130539,
-    "particle_position_z": 1.0804033164204343,
-    "particle_weight": 2693578942962146.5
-  },
-  "deuterium_target": {
-    "particle_momentum_x": 0.0,
-    "particle_momentum_y": 0.0,
-    "particle_momentum_z": 0.0,
-    "particle_position_x": 6.480399455167112,
-    "particle_position_y": 9.720567935501833,
-    "particle_position_z": 1.0801264122124792,
-    "particle_weight": 2693578942962147.0
-  },
-  "helium3_1": {
-    "particle_momentum_x": 1.8555993115327896e-14,
-    "particle_momentum_y": 1.8597588243368063e-14,
-    "particle_momentum_z": 6.461132693652054e-14,
-    "particle_position_x": 2.588720369658411,
-    "particle_position_y": 3.87481635700828,
-    "particle_position_z": 0.4310912132612338,
-    "particle_weight": 6421057037853.18
-  },
   "lev=0": {
     "rho": 0.0
   },

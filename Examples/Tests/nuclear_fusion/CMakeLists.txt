@@ -36,7 +36,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_1pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DD"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DD"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
@@ -46,7 +46,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_5pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DD"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DD"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
@@ -56,7 +56,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_10pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DD"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DD"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
@@ -86,7 +86,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_tritium_fusion_anisotropic_beam_target_1pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DT"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DT"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
@@ -96,7 +96,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_tritium_fusion_anisotropic_beam_target_5pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DT"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DT"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
@@ -106,7 +106,7 @@ add_warpx_test(
     3  # dims
     2  # nprocs
     inputs_test_3d_deuterium_tritium_fusion_anisotropic_beam_target_10pc  # inputs
-    "analysis_deuterium_fusion_3d_anisotropic.py --reaction DT"  # analysis
+    "analysis_fusion_anisotropic_beam_target.py --reaction DT"  # analysis
     "analysis_default_regression.py --path diags/diag1"  # checksum
     OFF  # dependency
 )
