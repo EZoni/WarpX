@@ -137,11 +137,9 @@ namespace {
         // the energy-dependent coefficients when anisotropic scattering is used.
         // The kinetic energy is clamped to zero to avoid small negative numbers
         // due to machine precision errors, for low-energy particles.
-        const double E_kin_star_d = amrex::max(
-            std::sqrt(E_star_sq_pos_d) - E_rest_in_d, 0.0);
+        const double E_kin_star_d = amrex::max(std::sqrt(E_star_sq_pos_d) - E_rest_in_d, 0.0);
         constexpr double joule_to_MeV_d = 1.e-6 / static_cast<double>(PhysConst::q_e);
-        const auto E_kin_star_MeV = static_cast<amrex::ParticleReal>(
-            E_kin_star_d * joule_to_MeV_d);
+        const auto E_kin_star_MeV = static_cast<amrex::ParticleReal>(E_kin_star_d * joule_to_MeV_d);
 
         // Square of the norm of the momentum of the products in the center of mass frame
         // Formula obtained by inverting E^2 = p^2*c^2 + m^2*c^4 in the COM frame for each particle
@@ -226,8 +224,7 @@ namespace {
                 // Incident direction is undefined in the COM frame; fall back to an
                 // isotropic direction while conserving the outgoing COM momentum magnitude.
                 ParticleUtils::RandomizeVelocity(px_star_out, py_star_out, pz_star_out,
-                    static_cast<amrex::ParticleReal>(p_star_f_d), engine,
-                    ScatteringAngleModel::Isotropic);
+                    static_cast<amrex::ParticleReal>(p_star_f_d), engine, ScatteringAngleModel::Isotropic);
             }
         }
         else {
