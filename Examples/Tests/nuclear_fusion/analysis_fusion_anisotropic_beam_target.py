@@ -14,6 +14,14 @@ import numpy as np
 import scipy.constants as scc
 from openpmd_viewer import OpenPMDTimeSeries
 
+MASS = {
+    "deuteron": 2.01410177812 * scc.m_u - scc.m_e,
+    "triton": 3.0160492779 * scc.m_u - scc.m_e,
+    "helion": 3.0160293201 * scc.m_u - 2.0 * scc.m_e,
+    "alpha": 4.00260325413 * scc.m_u - 2.0 * scc.m_e,
+    "neutron": 1.0013784193052508 * scc.m_p,
+}
+
 REACTION_CONFIG = {
     "DD": {
         "e_min": 0.0,
@@ -21,7 +29,8 @@ REACTION_CONFIG = {
         "output": "deuterium_deuterium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [0.0, 5.0, 10.0, 15.0],
         "scale": 1.0,
-        "target_mass": scc.physical_constants["deuteron mass"][0],
+        "target_mass": MASS["deuteron"],
+        "product_mass": MASS["helion"],
     },
     "DT": {
         "e_min": 10.0,
@@ -29,7 +38,8 @@ REACTION_CONFIG = {
         "output": "deuterium_tritium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [10.0, 15.0, 20.0, 25.0, 30.0],
         "scale": 2.6,
-        "target_mass": scc.physical_constants["triton mass"][0],
+        "target_mass": MASS["triton"],
+        "product_mass": MASS["alpha"],
     },
 }
 
@@ -136,18 +146,32 @@ def weighted_mean(values, weights):
     return np.sum(weights * values) / np.sum(weights)
 
 
-def get_cm_boost(diag_dir, reaction):
+def get_cm_kinematics(diag_dir, reaction):
     beam_u = infer_beam_momentum(diag_dir)
     beam_gamma = np.sqrt(1.0 + beam_u**2)
-    beam_mass = scc.physical_constants["deuteron mass"][0]
+    beam_mass = MASS["deuteron"]
     target_mass = REACTION_CONFIG[reaction]["target_mass"]
+    product_mass = REACTION_CONFIG[reaction]["product_mass"]
 
     # The target is stationary and the beam is monoenergetic.  Its input momentum is
     # u/c = gamma*beta, so the total reactant four-momentum gives one exact CM boost
     # for the entire run.
     cm_beta = beam_mass * beam_u / (beam_mass * beam_gamma + target_mass)
     cm_gamma = 1.0 / np.sqrt(1.0 - cm_beta**2)
-    return cm_beta, cm_gamma
+
+    # The invariant mass of the reactants fixes the energy and momentum of both
+    # products in the CM frame for this two-body reaction.
+    cm_mass = np.sqrt(
+        beam_mass**2 + target_mass**2 + 2.0 * beam_mass * target_mass * beam_gamma
+    )
+    neutron_rest_energy = MASS["neutron"] * scc.c**2
+    neutron_energy_cm = (
+        (cm_mass**2 + MASS["neutron"] ** 2 - product_mass**2)
+        * scc.c**2
+        / (2.0 * cm_mass)
+    )
+    neutron_momentum_cm_c = np.sqrt(neutron_energy_cm**2 - neutron_rest_energy**2)
+    return cm_beta, cm_gamma, neutron_energy_cm, neutron_momentum_cm_c
 
 
 def get_neutron_spectrum(diag_dir, reaction):
@@ -159,17 +183,20 @@ def get_neutron_spectrum(diag_dir, reaction):
 
     u2 = ux**2 + uy**2 + uz**2
     gamma = np.sqrt(1.0 + u2)
-    m_neutron = scc.m_n
+    m_neutron = MASS["neutron"]
     # Convert neutron momentum u = gamma beta to kinetic energy.
     energy_MeV = (gamma - 1.0) * m_neutron * scc.c**2 / scc.e / 1.0e6
-    # Transform the neutron four-momentum from the lab to the reactant CM frame.
-    # ux and uy are unchanged by the longitudinal boost.
-    cm_beta, cm_gamma = get_cm_boost(diag_dir, reaction)
-    uz_cm = cm_gamma * (uz - cm_beta * gamma)
-    u_cm = np.sqrt(ux**2 + uy**2 + uz_cm**2)
-    # Measure the CM-frame emission angle relative to the beam axis (+z).
-    cos_theta = np.divide(uz_cm, u_cm, out=np.zeros_like(uz_cm), where=u_cm > 0.0)
-    theta_deg = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+    cm_beta, cm_gamma, neutron_energy_cm, neutron_momentum_cm_c = get_cm_kinematics(
+        diag_dir, reaction
+    )
+    # For this monoenergetic two-body reaction, the lab-frame neutron energy is
+    # exactly linear in its CM-frame direction cosine:
+    # E_lab = gamma_cm * (E_n_cm + beta_cm * p_n_cm * c * mu_cm).
+    neutron_energy_lab = gamma * m_neutron * scc.c**2
+    mu_cm = (neutron_energy_lab / cm_gamma - neutron_energy_cm) / (
+        cm_beta * neutron_momentum_cm_c
+    )
+    theta_deg = np.degrees(np.arccos(np.clip(mu_cm, -1.0, 1.0)))
     return energy_MeV, theta_deg, w
 
 
