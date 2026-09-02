@@ -11,8 +11,13 @@ each reaction reproduce the quantities plotted in Figure 2 of
 `van de Wetering et al. (2025) <https://doi.org/10.1103/zwjx-jbxl>`__.
 
 Each CTest analysis validates its run independently using integral neutron
-spectrum observables.  To generate the comparison plots, first run the six
-simulations without their analysis or cleanup tests:
+spectrum observables. The tests use 20,000 particles per cell to
+reduce their runtime. For a closer match to the benchmark figure in the
+paper, use 40,000 particles per cell for both reactant species in the D-D and
+D-T base input files.
+
+To generate the comparison plots, first run the six simulations without their
+analysis or cleanup tests:
 
 .. code-block:: bash
 

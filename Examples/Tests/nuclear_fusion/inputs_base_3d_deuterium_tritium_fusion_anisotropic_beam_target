@@ -26,7 +26,7 @@ deuterium_beam.injection_style = "NRandomPerCell"        # random placement per 
 deuterium_beam.momentum_distribution_type = "parse_momentum_function"
 deuterium_beam.momentum_function_ux(x,y,z) = 0.          # no x drift
 deuterium_beam.momentum_function_uy(x,y,z) = 0.          # no y drift
-deuterium_beam.num_particles_per_cell = 40000            # macroparticles per cell (200)
+deuterium_beam.num_particles_per_cell = 20000            # macroparticles per cell
 deuterium_beam.profile = constant                        # uniform density
 deuterium_beam.species_type = deuterium                  # physical species
 
@@ -39,7 +39,7 @@ tritium_target.momentum_distribution_type = "parse_momentum_function"
 tritium_target.momentum_function_ux(x,y,z) = 0.          # at rest
 tritium_target.momentum_function_uy(x,y,z) = 0.          # at rest
 tritium_target.momentum_function_uz(x,y,z) = 0.          # at rest
-tritium_target.num_particles_per_cell = 40000            # macroparticles per cell (200)
+tritium_target.num_particles_per_cell = 20000            # macroparticles per cell
 tritium_target.profile = constant                        # uniform density
 tritium_target.species_type = tritium                    # physical species
 
