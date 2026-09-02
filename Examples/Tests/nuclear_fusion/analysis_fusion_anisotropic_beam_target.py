@@ -21,6 +21,7 @@ REACTION_CONFIG = {
         "output": "deuterium_deuterium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [0.0, 5.0, 10.0, 15.0],
         "scale": 1.0,
+        "target_mass": scc.physical_constants["deuteron mass"][0],
     },
     "DT": {
         "e_min": 10.0,
@@ -28,6 +29,7 @@ REACTION_CONFIG = {
         "output": "deuterium_tritium_fusion_anisotropic_beam_target_neutron_spectrum.png",
         "xticks": [10.0, 15.0, 20.0, 25.0, 30.0],
         "scale": 2.6,
+        "target_mass": scc.physical_constants["triton mass"][0],
     },
 }
 
@@ -36,18 +38,26 @@ REACTION_CONFIG = {
 # across compute backends and particle precisions.
 REFERENCE_METRICS = {
     "DD": {
-        1: {"mean_energy": 2.49595, "std_energy": 0.214295, "mean_cos_theta": 0.042804},
-        5: {"mean_energy": 3.62257, "std_energy": 1.39414, "mean_cos_theta": 0.153024},
-        10: {"mean_energy": 7.13244, "std_energy": 3.88327, "mean_cos_theta": 0.210342},
+        1: {
+            "mean_energy": 2.49595,
+            "std_energy": 0.214295,
+            "mean_cos_theta": -0.002990,
+        },
+        5: {"mean_energy": 3.62257, "std_energy": 1.39414, "mean_cos_theta": -0.000174},
+        10: {
+            "mean_energy": 7.13244,
+            "std_energy": 3.88327,
+            "mean_cos_theta": -0.000100,
+        },
     },
     "DT": {
         1: {
             "mean_energy": 14.0822,
             "std_energy": 0.376711,
-            "mean_cos_theta": 0.0176632,
+            "mean_cos_theta": -0.001278,
         },
-        5: {"mean_energy": 15.5438, "std_energy": 1.98236, "mean_cos_theta": 0.134032},
-        10: {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.206129},
+        5: {"mean_energy": 15.5438, "std_energy": 1.98236, "mean_cos_theta": 0.057142},
+        10: {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.088694},
     },
 }
 
@@ -97,7 +107,7 @@ def find_used_inputs(diag_dir):
     raise AssertionError(f"Could not find warpx_used_inputs for {diag_dir}.")
 
 
-def infer_beam_speed_percent(diag_dir):
+def infer_beam_momentum(diag_dir):
     text = find_used_inputs(diag_dir).read_text()
     match = re.search(
         r"deuterium_beam\.momentum_function_uz\(x,y,z\)\s*=\s*"
@@ -105,7 +115,11 @@ def infer_beam_speed_percent(diag_dir):
         text,
     )
     assert match, f"Could not determine the beam momentum for {diag_dir}."
-    speed_percent = 100.0 * float(match.group(1))
+    return float(match.group(1))
+
+
+def infer_beam_speed_percent(diag_dir):
+    speed_percent = 100.0 * infer_beam_momentum(diag_dir)
     rounded_speed = round(speed_percent)
     assert np.isclose(speed_percent, rounded_speed), (
         f"Unsupported beam momentum u/c = {speed_percent:g}% in {diag_dir}."
@@ -122,7 +136,21 @@ def weighted_mean(values, weights):
     return np.sum(weights * values) / np.sum(weights)
 
 
-def get_neutron_spectrum(diag_dir):
+def get_cm_boost(diag_dir, reaction):
+    beam_u = infer_beam_momentum(diag_dir)
+    beam_gamma = np.sqrt(1.0 + beam_u**2)
+    beam_mass = scc.physical_constants["deuteron mass"][0]
+    target_mass = REACTION_CONFIG[reaction]["target_mass"]
+
+    # The target is stationary and the beam is monoenergetic.  Its input momentum is
+    # u/c = gamma*beta, so the total reactant four-momentum gives one exact CM boost
+    # for the entire run.
+    cm_beta = beam_mass * beam_u / (beam_mass * beam_gamma + target_mass)
+    cm_gamma = 1.0 / np.sqrt(1.0 - cm_beta**2)
+    return cm_beta, cm_gamma
+
+
+def get_neutron_spectrum(diag_dir, reaction):
     ts = OpenPMDTimeSeries(diag_dir)
     iteration = ts.iterations[-1]
     ux, uy, uz, w = ts.get_particle(
@@ -130,19 +158,23 @@ def get_neutron_spectrum(diag_dir):
     )
 
     u2 = ux**2 + uy**2 + uz**2
-    u = np.sqrt(u2)
     gamma = np.sqrt(1.0 + u2)
     m_neutron = scc.m_n
     # Convert neutron momentum u = gamma beta to kinetic energy.
     energy_MeV = (gamma - 1.0) * m_neutron * scc.c**2 / scc.e / 1.0e6
-    # Measure the emission angle relative to the beam axis (+z).
-    cos_theta = np.divide(uz, u, out=np.zeros_like(uz), where=u > 0.0)
+    # Transform the neutron four-momentum from the lab to the reactant CM frame.
+    # ux and uy are unchanged by the longitudinal boost.
+    cm_beta, cm_gamma = get_cm_boost(diag_dir, reaction)
+    uz_cm = cm_gamma * (uz - cm_beta * gamma)
+    u_cm = np.sqrt(ux**2 + uy**2 + uz_cm**2)
+    # Measure the CM-frame emission angle relative to the beam axis (+z).
+    cos_theta = np.divide(uz_cm, u_cm, out=np.zeros_like(uz_cm), where=u_cm > 0.0)
     theta_deg = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
     return energy_MeV, theta_deg, w
 
 
 def validate_neutron_spectrum(diag_dir, reaction):
-    energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir)
+    energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir, reaction)
     assert energy_MeV.size >= 1000, (
         f"Too few neutron macroparticles ({energy_MeV.size}) in {diag_dir}."
     )
@@ -185,7 +217,7 @@ def validate_neutron_spectrum(diag_dir, reaction):
     )
 
 
-def plot_neutron_spectra(diag_dirs, labels, config, output):
+def plot_neutron_spectra(diag_dirs, labels, reaction, config, output):
     e_min = config["e_min"]
     e_max = config["e_max"]
     energy_bins = np.linspace(e_min, e_max, 240)
@@ -197,7 +229,7 @@ def plot_neutron_spectra(diag_dirs, labels, config, output):
     ax_angle = ax_spectrum.twinx()
 
     for diag_dir, label in zip(diag_dirs, labels):
-        energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir)
+        energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir, reaction)
         assert energy_MeV.size > 0, f"No neutron macroparticles found in {diag_dir}."
 
         # Histogram macroparticle weights to obtain the neutron energy spectrum.
@@ -243,7 +275,7 @@ def plot_neutron_spectra(diag_dirs, labels, config, output):
     ax_angle.set_yticks([0.0, 60.0, 120.0, 180.0])
     ax_spectrum.set_xlabel(r"$E_n$ (MeV)")
     ax_spectrum.set_ylabel(r"$dN/dE_n$ (arb. units)")
-    ax_angle.set_ylabel(r"$\theta$ (degrees)")
+    ax_angle.set_ylabel(r"$\theta_\mathrm{CM}$ (degrees)")
     ax_spectrum.legend(frameon=False, loc="upper right", fontsize=8)
     ax_spectrum.minorticks_on()
     ax_angle.minorticks_on()
@@ -271,6 +303,7 @@ def main():
         plot_neutron_spectra(
             args.diag_dirs,
             labels,
+            args.reaction,
             REACTION_CONFIG[args.reaction],
             args.output,
         )
