@@ -109,16 +109,16 @@ namespace ScatteringUtils {
      * table, linearly interpolating the coefficients in energy.
      *
      * The probability distribution is expressed in terms of Legendre coefficients
-     * \f$A_l\f$ as
-     * \f$f(\mu) = 1/2 + \sum_{l=1}^L (2l+1) A_l P_l(\mu)/2\f$.
+     * \f$L_l\f$ as
+     * \f$f(\mu) = 1/2 + \sum_{l=1}^{l_{\mathrm{max}}} (2l+1) L_l P_l(\mu)/2\f$.
      *
-     * @param[in] a_Al table of anisotropic Legendre coefficients
+     * @param[in] a_Ll table of anisotropic Legendre coefficients
      * @param[in] a_energy_MeV center-of-mass kinetic energy in MeV
      * @param[in] a_U uniform random number in [0,1]
      */
     AMREX_GPU_HOST_DEVICE AMREX_INLINE
     amrex::ParticleReal getRandomCosThetaAnisotropic (
-        AnisotropicCoefficientTable const& a_Al,
+        AnisotropicCoefficientTable const& a_Ll,
         amrex::ParticleReal const a_energy_MeV,
         amrex::ParticleReal const a_U)
     {
@@ -126,7 +126,7 @@ namespace ScatteringUtils {
 
         constexpr amrex::ParticleReal tol = 1.0e-8_prt;
         constexpr int iter_max = 100;
-        int const L = a_Al.m_num_coefficients - 1;
+        int const l_max = a_Ll.m_num_coefficients - 1;
 
         amrex::ParticleReal mu = 0.0_prt;
 
@@ -137,13 +137,13 @@ namespace ScatteringUtils {
             // Generate P_l(mu) in place to keep this routine GPU-callable.
             amrex::ParticleReal P_l_minus_one = 1.0_prt;
             amrex::ParticleReal P_l = mu;
-            for (int l = 1; l <= L; ++l) {
+            for (int l = 1; l <= l_max; ++l) {
                 auto const l_prt = static_cast<amrex::ParticleReal>(l);
                 amrex::ParticleReal const P_l_plus_one =
                     ((2.0_prt * l_prt + 1.0_prt) * mu * P_l
                      - l_prt * P_l_minus_one) / (l_prt + 1.0_prt);
                 amrex::ParticleReal const coefficient =
-                    a_Al.getCoefficient(a_energy_MeV, l);
+                    a_Ll.getCoefficient(a_energy_MeV, l);
 
                 fmu += (l_prt + 0.5_prt) * coefficient * P_l;
                 Fmu += 0.5_prt * coefficient * (P_l_plus_one - P_l_minus_one);

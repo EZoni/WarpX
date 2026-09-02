@@ -12,7 +12,7 @@ boundary.field_lo = periodic periodic periodic   # periodic lower boundaries
 # ===== Fusion collision module =====
 collisions.collision_names = DDNHeF                      # name of collision process
 DDNHeF.event_multiplier = 1.e10                          # variance reduction: boost rare event rate
-DDNHeF.fusion_angular_distribution_coefficients = ../../../Examples/Tests/nuclear_fusion/endf-D.d.n.He3-L_cm.txt
+DDNHeF.fusion_angular_distribution_coefficients = ../../../../warpx-data/nuclear_fusion/D_d_n_He3/angular_distribution/endf/coefficients.txt
 DDNHeF.product_species = helium3_1 neutron_1             # fusion products: He-3 + neutron
 DDNHeF.scattering_angle_model = anisotropic              # realistic data-driven emission angles
 DDNHeF.species = deuterium_beam deuterium_target         # reactants
