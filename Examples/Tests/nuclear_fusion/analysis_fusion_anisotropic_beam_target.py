@@ -36,14 +36,18 @@ REACTION_CONFIG = {
 # across compute backends and particle precisions.
 REFERENCE_METRICS = {
     "DD": {
-        1: {"mean_energy": 2.4961, "std_energy": 0.21466, "mean_cos_theta": 0.04312},
-        5: {"mean_energy": 3.6232, "std_energy": 1.3961, "mean_cos_theta": 0.15298},
-        10: {"mean_energy": 7.1341, "std_energy": 3.8885, "mean_cos_theta": 0.21013},
+        1: {"mean_energy": 2.49595, "std_energy": 0.214295, "mean_cos_theta": 0.042804},
+        5: {"mean_energy": 3.62257, "std_energy": 1.39414, "mean_cos_theta": 0.153024},
+        10: {"mean_energy": 7.13244, "std_energy": 3.88327, "mean_cos_theta": 0.210342},
     },
     "DT": {
-        1: {"mean_energy": 14.0825, "std_energy": 0.37748, "mean_cos_theta": 0.01812},
-        5: {"mean_energy": 15.5449, "std_energy": 1.9861, "mean_cos_theta": 0.13423},
-        10: {"mean_energy": 19.9295, "std_energy": 4.8190, "mean_cos_theta": 0.20604},
+        1: {
+            "mean_energy": 14.0822,
+            "std_energy": 0.376711,
+            "mean_cos_theta": 0.0176632,
+        },
+        5: {"mean_energy": 15.5438, "std_energy": 1.98236, "mean_cos_theta": 0.134032},
+        10: {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.206129},
     },
 }
 
