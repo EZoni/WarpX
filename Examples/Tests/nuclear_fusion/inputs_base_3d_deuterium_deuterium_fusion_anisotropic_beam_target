@@ -71,5 +71,4 @@ neutron_1.species_type = neutron                         # fusion neutron
 max_step = 100                                           # number of timesteps
 my_constants.n0 = 5.e31                                  # reactant density [m^-3] (artificially high for statistics)
 particles.species_names = deuterium_beam deuterium_target helium3_1 neutron_1  # all species
-warpx.random_seed = 42                                   # fixed seed for reproducibility
 warpx.verbose = 1                                        # verbose console output

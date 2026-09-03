@@ -3,12 +3,12 @@
     "rho": 0.0
   },
   "neutron_1": {
-    "particle_momentum_x": 7.59238315385913e-15,
-    "particle_momentum_y": 7.594298751440416e-15,
-    "particle_momentum_z": 1.2176288389908293e-14,
-    "particle_position_x": 1.2965728936851815,
-    "particle_position_y": 1.9415265656167102,
-    "particle_position_z": 0.21655013331266137,
-    "particle_weight": 4092803434717.965
+    "particle_momentum_x": 7.575790307303725e-15,
+    "particle_momentum_y": 7.609389209367196e-15,
+    "particle_momentum_z": 1.2165089799127555e-14,
+    "particle_position_x": 1.2990111482707087,
+    "particle_position_y": 1.9463287219678675,
+    "particle_position_z": 0.21605790547250064,
+    "particle_weight": 4091712485024.3496
   }
 }
