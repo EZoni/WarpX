@@ -22,16 +22,17 @@
 
 namespace {
 
-    void readFusionCrossSectionFile (
-        const std::string& cross_section_file,
+    void readFusionAngularDistributionFile (
+        const std::string& coefficient_file,
         amrex::Gpu::HostVector<amrex::ParticleReal>& energies,
         amrex::Gpu::HostVector<amrex::ParticleReal>& coefficients,
-        int& num_coefficients)
+        int& num_coefficients,
+        FusionAngularDistributionCoefficientsFormat const coefficient_format)
     {
-        std::ifstream infile(cross_section_file);
+        std::ifstream infile(coefficient_file);
         if (!infile.is_open()) {
             WARPX_ABORT_WITH_MESSAGE(
-                "Failed to open fusion cross-section data file: " + cross_section_file);
+                "Failed to open fusion angular-distribution data file: " + coefficient_file);
         }
 
         // Will be set from the first non-empty row; all subsequent rows must match.
@@ -66,8 +67,8 @@ namespace {
                 // Subsequent rows must have the same number of coefficient columns.
                 WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
                     row_num_coefficients == num_coefficients,
-                    "Inconsistent number of columns in fusion cross-section data file " +
-                    cross_section_file + " at line " + std::to_string(line_number));
+                    "Inconsistent number of columns in fusion angular-distribution data file " +
+                    coefficient_file + " at line " + std::to_string(line_number));
             }
 
             // Energy grid must be strictly increasing for interpolation.
@@ -79,23 +80,37 @@ namespace {
 
             // Store the energy (column 0) and the coefficient(s) (columns 1..N).
             energies.push_back(values[0]);
-            for (int i = 0; i < num_coefficients; ++i) {
-                coefficients.push_back(values[i + 1]);
+            if (coefficient_format == FusionAngularDistributionCoefficientsFormat::IAEA) {
+                amrex::ParticleReal const A_0 = values[1];
+                WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
+                    A_0 != amrex::ParticleReal(0.0),
+                    "The zeroth-order IAEA fusion angular-distribution coefficient must be "
+                    "nonzero in " + coefficient_file + " at line " +
+                    std::to_string(line_number));
+
+                for (int l = 0; l < num_coefficients; ++l) {
+                    coefficients.push_back(
+                        (values[l + 1] / A_0) / static_cast<amrex::ParticleReal>(2 * l + 1));
+                }
+            } else {
+                for (int l = 0; l < num_coefficients; ++l) {
+                    coefficients.push_back(values[l + 1]);
+                }
             }
         }
 
         // Distinguish a clean EOF from a low-level I/O error.
         if (infile.bad()) {
             WARPX_ABORT_WITH_MESSAGE(
-                "Failed to read fusion cross-section data from file: " + cross_section_file);
+                "Failed to read fusion angular-distribution data from file: " + coefficient_file);
         }
 
         // At least two energy points are required to perform linear interpolation.
         WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
             energies.size() > 1u,
-            "Fusion cross-section data file must contain at least two energy rows for "
+            "Fusion angular-distribution data file must contain at least two energy rows for "
             "interpolation: " +
-            cross_section_file);
+            coefficient_file);
     }
 
 }
@@ -144,15 +159,23 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
     // Optionally load an energy-dependent table of coefficients that
     // describes the anisotropic angular distribution of fusion products.
     std::string fusion_angular_distribution_coefficients_file;
-    if (pp_collision_name.query("fusion_angular_distribution_coefficients", fusion_angular_distribution_coefficients_file)) {
+    if (pp_collision_name.query(
+            "fusion_angular_distribution_coefficients",
+            fusion_angular_distribution_coefficients_file))
+    {
+        FusionAngularDistributionCoefficientsFormat coefficient_format =
+            FusionAngularDistributionCoefficientsFormat::Default;
+        pp_collision_name.get_enum_case_insensitive(
+            "fusion_angular_distribution_coefficients_format", coefficient_format);
+
         // Temporary host-side storage for the table data.
         amrex::Gpu::HostVector<amrex::ParticleReal> h_energies;
         amrex::Gpu::HostVector<amrex::ParticleReal> h_coefficients;
         // Parse the file; sets m_fusion_angular_distribution_num_coefficients
         // to the number of coefficients per energy point.
-        readFusionCrossSectionFile(
+        readFusionAngularDistributionFile(
             fusion_angular_distribution_coefficients_file, h_energies, h_coefficients,
-            m_fusion_angular_distribution_num_coefficients);
+            m_fusion_angular_distribution_num_coefficients, coefficient_format);
 
         // Record the number of energy points and size the device vectors.
         m_fusion_angular_distribution_num_energies = static_cast<int>(h_energies.size());

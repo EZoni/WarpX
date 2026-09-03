@@ -205,4 +205,12 @@ AMREX_ENUM(
     Default = Isotropic  /**< Isotropic */
 );
 
+/** \brief Format of the coefficients used for anisotropic fusion angular distributions */
+AMREX_ENUM(
+    FusionAngularDistributionCoefficientsFormat,
+    ENDF,  /**< Orthonormal ENDF Legendre coefficients */
+    IAEA,  /**< IAEA coefficients used by the Higginson cosine expansion */
+    Default = ENDF
+);
+
 #endif // WARPX_UTILS_WARPXALGORITHMSELECTION_H_
