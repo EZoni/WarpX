@@ -3081,9 +3081,12 @@ Details about the collision models can be found in the :ref:`theory section <mul
 
     Format of :pp:param:`<collision_name>.fusion_angular_distribution_coefficients`.
     This parameter is required when a coefficient table is specified.
-    ``ENDF`` selects orthonormal ENDF Legendre coefficients, which WarpX uses as given.
-    ``IAEA`` selects the non-orthonormal coefficients used in the Higginson cosine expansion.
-    WarpX converts every IAEA coefficient before use according to
+    ``ENDF`` selects the orthonormal Legendre coefficients defined by the ENDF-6 format
+    :cite:p:`param-BrownENDF2023`, which WarpX uses as given.
+    ``IAEA`` selects the non-orthonormal coefficients tabulated by
+    :cite:t:`param-DrosgOtukaIAEA2015` and used in the cosine expansion of
+    :cite:t:`param-HigginsonJCP2019`. WarpX converts every IAEA coefficient before use
+    according to
 
     .. math::
 

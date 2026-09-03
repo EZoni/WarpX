@@ -337,7 +337,8 @@ namespace ParticleUtils {
     /**
      * \brief Generate a random angle with isotropic or anisotropic distribution,
      * following the method described in equations (27)-(31) or (36)-(42) of
-     * Higginson et al., J. Comput. Phys. 388 (2019), doi.org/10.1016/j.jcp.2019.03.020.
+     * Higginson et al., J. Comput. Phys. 388 (2019),
+     * https://doi.org/10.1016/j.jcp.2019.03.020.
      *
      * @param[in] engine the random engine
      * @param[in] scattering_angle_model the scattering angle distribution to use
@@ -367,7 +368,8 @@ namespace ParticleUtils {
     /**
      * \brief Generate a random unit vector with isotropic or anisotropic distribution,
      * following the method described in equations (27)-(31) or (36)-(42) of
-     * Higginson et al., J. Comput. Phys. 388 (2019), doi.org/10.1016/j.jcp.2019.03.020.
+     * Higginson et al., J. Comput. Phys. 388 (2019),
+     * https://doi.org/10.1016/j.jcp.2019.03.020.
      *
      * @param[out] x x-component of the random unit vector
      * @param[out] y y-component of the random unit vector

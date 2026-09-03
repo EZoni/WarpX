@@ -208,8 +208,10 @@ AMREX_ENUM(
 /** \brief Format of the coefficients used for anisotropic fusion angular distributions */
 AMREX_ENUM(
     FusionAngularDistributionCoefficientsFormat,
-    ENDF,  /**< Orthonormal ENDF Legendre coefficients */
-    IAEA,  /**< IAEA coefficients used by the Higginson cosine expansion */
+    ENDF,  /**< ENDF-6 Legendre coefficients; see
+              https://www.nndc.bnl.gov/endfdocs/ENDF-102-2023.pdf */
+    IAEA,  /**< IAEA coefficients from https://www-nds.iaea.org/records/t5vy7-v2d27,
+              used by https://doi.org/10.1016/j.jcp.2019.03.020 */
     Default = ENDF
 );
 
