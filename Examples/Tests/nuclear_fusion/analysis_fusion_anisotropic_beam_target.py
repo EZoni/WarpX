@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
@@ -13,6 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants as scc
 from openpmd_viewer import OpenPMDTimeSeries
+
+sys.path.append("../../../Tools/Parser/")
+from input_file_parser import parse_input_file
 
 MASS = {
     "deuteron": 2.01410177812 * scc.m_u - scc.m_e,
@@ -118,14 +120,10 @@ def find_used_inputs(diag_dir):
 
 
 def infer_beam_momentum(diag_dir):
-    text = find_used_inputs(diag_dir).read_text()
-    match = re.search(
-        r"deuterium_beam\.momentum_function_uz\(x,y,z\)\s*=\s*"
-        r"([+-]?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)",
-        text,
-    )
-    assert match, f"Could not determine the beam momentum for {diag_dir}."
-    return float(match.group(1))
+    input_dict = parse_input_file(find_used_inputs(diag_dir))
+    parameter = "deuterium_beam.momentum_function_uz(x,y,z)"
+    (beam_momentum,) = input_dict[parameter]
+    return float(beam_momentum)
 
 
 def infer_beam_speed_percent(diag_dir):
