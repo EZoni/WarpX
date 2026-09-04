@@ -74,14 +74,6 @@ REFERENCE_METRICS = {
 }
 
 
-def parse_reaction(value):
-    reaction = value.upper()
-    if reaction not in REACTION_CONFIG:
-        choices = ", ".join(REACTION_CONFIG)
-        raise argparse.ArgumentTypeError(f"reaction must be one of: {choices}")
-    return reaction
-
-
 def parse_args():
     argv = sys.argv[1:]
     if len(argv) == 2 and argv[1].lower().endswith((".png", ".pdf", ".svg")):
@@ -89,7 +81,6 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("diag_dirs", nargs="*")
-    parser.add_argument("--reaction", type=parse_reaction, default="DD")
     parser.add_argument("-o", "--output")
     parser.add_argument("--labels", nargs="+")
     parser.add_argument(
@@ -99,9 +90,7 @@ def parse_args():
     )
     args = parser.parse_args(argv)
 
-    if args.output is None:
-        args.output = REACTION_CONFIG[args.reaction]["output"]
-    else:
+    if args.output is not None:
         args.plot = True
 
     return args
@@ -117,6 +106,33 @@ def find_used_inputs(diag_dir):
         if input_path.exists():
             return input_path
     raise AssertionError(f"Could not find warpx_used_inputs for {diag_dir}.")
+
+
+def infer_reaction(diag_dir):
+    input_dict = parse_input_file(find_used_inputs(diag_dir))
+    collision_names = input_dict.get("collisions.collision_names", [])
+    inferred_reactions = set()
+
+    for collision_name in collision_names:
+        species = input_dict.get(f"{collision_name}.species", [])
+        species_types = [
+            input_dict.get(f"{species_name}.species_type", [None])[0]
+            for species_name in species
+        ]
+        if species_types.count("deuterium") == 2 and len(species_types) == 2:
+            inferred_reactions.add("DD")
+        elif (
+            species_types.count("deuterium") == 1
+            and species_types.count("tritium") == 1
+            and len(species_types) == 2
+        ):
+            inferred_reactions.add("DT")
+
+    assert len(inferred_reactions) == 1, (
+        f"Could not infer exactly one supported fusion reaction from "
+        f"{find_used_inputs(diag_dir)}; found {sorted(inferred_reactions)}."
+    )
+    return inferred_reactions.pop()
 
 
 def infer_beam_momentum(diag_dir):
@@ -317,8 +333,18 @@ def main():
     if not args.diag_dirs:
         args.diag_dirs = [Path("diags/diag1")]
 
+    reactions = {infer_reaction(diag_dir) for diag_dir in args.diag_dirs}
+    assert len(reactions) == 1, (
+        f"Diagnostics contain different reactions: {sorted(reactions)}. "
+        "Analyze them separately."
+    )
+    reaction = reactions.pop()
+
+    if args.output is None:
+        args.output = REACTION_CONFIG[reaction]["output"]
+
     for diag_dir in args.diag_dirs:
-        validate_neutron_spectrum(diag_dir, args.reaction)
+        validate_neutron_spectrum(diag_dir, reaction)
 
     if args.plot:
         labels = args.labels
@@ -331,8 +357,8 @@ def main():
         plot_neutron_spectra(
             args.diag_dirs,
             labels,
-            args.reaction,
-            REACTION_CONFIG[args.reaction],
+            reaction,
+            REACTION_CONFIG[reaction],
             args.output,
         )
 

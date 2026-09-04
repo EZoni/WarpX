@@ -30,13 +30,13 @@ for each reaction:
 .. code-block:: bash
 
    python Examples/Tests/nuclear_fusion/analysis_fusion_anisotropic_beam_target.py \
-     --reaction DD --plot \
+     --plot \
      build/bin/test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_1pc/diags/diag1 \
      build/bin/test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_5pc/diags/diag1 \
      build/bin/test_3d_deuterium_deuterium_fusion_anisotropic_beam_target_10pc/diags/diag1
 
    python Examples/Tests/nuclear_fusion/analysis_fusion_anisotropic_beam_target.py \
-     --reaction DT --plot \
+     --plot \
      build/bin/test_3d_deuterium_tritium_fusion_anisotropic_beam_target_1pc/diags/diag1 \
      build/bin/test_3d_deuterium_tritium_fusion_anisotropic_beam_target_5pc/diags/diag1 \
      build/bin/test_3d_deuterium_tritium_fusion_anisotropic_beam_target_10pc/diags/diag1
