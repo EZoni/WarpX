@@ -126,18 +126,18 @@ def infer_beam_momentum(diag_dir):
     return float(beam_momentum)
 
 
-def infer_beam_speed_percent(diag_dir):
-    speed_percent = 100.0 * infer_beam_momentum(diag_dir)
-    rounded_speed = round(speed_percent)
-    assert np.isclose(speed_percent, rounded_speed), (
-        f"Unsupported beam momentum u/c = {speed_percent:g}% in {diag_dir}."
+def beam_gamma_beta_percent(diag_dir):
+    gamma_beta_percent = 100.0 * infer_beam_momentum(diag_dir)
+    rounded_gamma_beta = round(gamma_beta_percent)
+    assert np.isclose(gamma_beta_percent, rounded_gamma_beta), (
+        f"Unsupported beam momentum u/c = {gamma_beta_percent:g}% in {diag_dir}."
     )
-    return rounded_speed
+    return rounded_gamma_beta
 
 
 def infer_label(diag_dir):
-    speed_percent = infer_beam_speed_percent(diag_dir)
-    return rf"$u/c = {speed_percent:g}\%$"
+    gamma_beta_percent = beam_gamma_beta_percent(diag_dir)
+    return rf"$u/c = {gamma_beta_percent:g}\%$"
 
 
 def weighted_mean(values, weights):
@@ -218,11 +218,11 @@ def validate_neutron_spectrum(diag_dir, reaction):
         "mean_cos_theta": mean_cos_theta,
     }
 
-    speed_percent = infer_beam_speed_percent(diag_dir)
-    assert speed_percent in REFERENCE_METRICS[reaction], (
-        f"No reference metrics for u/c = {speed_percent:g}%."
+    gamma_beta_percent = beam_gamma_beta_percent(diag_dir)
+    assert gamma_beta_percent in REFERENCE_METRICS[reaction], (
+        f"No reference metrics for u/c = {gamma_beta_percent:g}%."
     )
-    reference = REFERENCE_METRICS[reaction][speed_percent]
+    reference = REFERENCE_METRICS[reaction][gamma_beta_percent]
     np.testing.assert_allclose(
         [metrics["mean_energy"], metrics["std_energy"]],
         [reference["mean_energy"], reference["std_energy"]],
@@ -236,7 +236,7 @@ def validate_neutron_spectrum(diag_dir, reaction):
         atol=0.03,
     )
     print(
-        f"{reaction}, u/c = {speed_percent:g}%: "
+        f"{reaction}, u/c = {gamma_beta_percent:g}%: "
         f"mean energy = {mean_energy:.6g} MeV, "
         f"energy std. dev. = {std_energy:.6g} MeV, "
         f"mean cos(theta) = {mean_cos_theta:.6g}"
