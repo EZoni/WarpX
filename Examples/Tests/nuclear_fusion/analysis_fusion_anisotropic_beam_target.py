@@ -211,12 +211,36 @@ def get_neutron_spectrum(diag_dir, reaction):
     # exactly linear in its CM-frame direction cosine:
     # E_lab = gamma_cm * (E_n_cm + beta_cm * p_n_cm * c * mu_cm).
     neutron_energy_lab = gamma * m_neutron * scc.c**2
-    cos_theta = np.clip(
-        (neutron_energy_lab / cm_gamma - neutron_energy_cm)
-        / (cm_beta * neutron_momentum_cm_c),
-        -1.0,
-        1.0,
+    cos_theta_from_energy = (neutron_energy_lab / cm_gamma - neutron_energy_cm) / (
+        cm_beta * neutron_momentum_cm_c
     )
+
+    # Independently reconstruct the CM-frame direction from the momentum vector.
+    # Longitudinal momentum transforms as
+    # p_z,lab*c = gamma_cm*(beta_cm*E_n,cm + p_n,cm*c*cos(theta)),
+    # while transverse momentum is invariant under the boost.  These checks catch
+    # inconsistencies between the sampled energy/angle and the assigned momentum.
+    momentum_c_scale = m_neutron * scc.c**2
+    momentum_z_lab_c = uz * momentum_c_scale
+    momentum_perp_lab_c = np.sqrt(ux**2 + uy**2) * momentum_c_scale
+    cos_theta_from_momentum = (
+        momentum_z_lab_c / cm_gamma - cm_beta * neutron_energy_cm
+    ) / neutron_momentum_cm_c
+    np.testing.assert_allclose(
+        cos_theta_from_energy,
+        cos_theta_from_momentum,
+        rtol=1.0e-9,
+        atol=1.0e-9,
+        err_msg="CM direction inferred from neutron energy and momentum disagrees",
+    )
+    np.testing.assert_allclose(
+        momentum_perp_lab_c**2,
+        neutron_momentum_cm_c**2 * (1.0 - cos_theta_from_momentum**2),
+        rtol=1.0e-9,
+        atol=1.0e-9 * neutron_momentum_cm_c**2,
+        err_msg="Neutron transverse momentum is inconsistent with its CM direction",
+    )
+    cos_theta = np.clip(cos_theta_from_energy, -1.0, 1.0)
     return energy_MeV, cos_theta, w
 
 
