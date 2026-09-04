@@ -359,6 +359,10 @@ namespace ParticleUtils {
             cos_theta = 2.0_prt * amrex::Random(engine) - 1.0_prt;  // opposite sign of that in Higginson's paper
         }
         else if (scattering_angle_model == ScatteringAngleModel::Anisotropic) {
+            // The coefficient table describes the lighter, second fusion product, whereas
+            // TwoProductComputeProductMomenta applies this vector to the heavier, first product.
+            // The products are back-to-back in the center-of-mass frame, hence the minus sign.
+            // ParticleCreationFunc validates this product ordering for anisotropic fusion.
             cos_theta = -ScatteringUtils::getRandomCosThetaAnisotropic(
                 anisotropic_coefficients, collision_energy_MeV, amrex::Random(engine));
         }

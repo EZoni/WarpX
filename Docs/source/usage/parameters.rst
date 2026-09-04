@@ -2990,6 +2990,9 @@ Details about the collision models can be found in the :ref:`theory section <mul
     If using ``bremsstrahlung``, the product species must be of type photon.
     If using ``linear_compton``, these should be two species: first, a photon species, and second, a lepton species, in this exact order.
     If using ``pulsed_decay``, the sum of the product species charges and mass must equal those of the parent species.
+    If using two-product ``nuclearfusion`` with ``scattering_angle_model = anisotropic``,
+    the heavier product must be listed first and the lighter product second. The angular
+    distribution coefficient table describes the lighter, second product.
 
 .. pp:param:: <collision_name>.ndt_supercycle
     :type: ``int``
@@ -3091,6 +3094,8 @@ Details about the collision models can be found in the :ref:`theory section <mul
     With ``forward``, the scattering angle is set to zero, i.e. the products are emitted in the same direction as the reactant (in the center of mass frame).
     With ``backward``, the scattering angle is set to :math:`\pi`, i.e. the products are emitted in the opposite direction of the reactant (in the center of mass frame).
     With ``anisotropic``, the scattering angle is drawn from the anisotropic distribution as given by the differential cross section of the fusion reaction.
+    For a two-product reaction, the coefficient table describes the lighter product; therefore,
+    :pp:param:`<collision_name>.product_species` must list the heavier product first.
 
 .. pp:param:: <collision_name>.fusion_angular_distribution_coefficients
     :type: ``string``
@@ -3100,6 +3105,8 @@ Details about the collision models can be found in the :ref:`theory section <mul
     used by the ``anisotropic`` scattering angle model. Each nonempty row contains a
     center-of-mass energy in MeV followed by all coefficients from order zero upward.
     At least two rows are required, and their energies must be strictly increasing.
+    For two-product fusion, these coefficients describe the lighter product, which must be
+    listed second in :pp:param:`<collision_name>.product_species`.
 
 .. pp:param:: <collision_name>.fusion_angular_distribution_coefficients_format
     :type: ``string``

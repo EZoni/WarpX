@@ -206,6 +206,23 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
             "<collision_name>.scattering_angle_model = anisotropic requires "
             "<collision_name>.fusion_angular_distribution_coefficients to be set "
             "to a valid table file.");
+
+        if (m_scattering_angle_model == ScatteringAngleModel::Anisotropic
+            && BinaryCollisionUtils::is_two_product_fusion_type(m_collision_type))
+        {
+            amrex::Vector<std::string> product_species_names;
+            pp_collision_name.getarr("product_species", product_species_names);
+            auto const& first_product =
+                mypc->GetParticleContainerFromName(product_species_names[0]);
+            auto const& second_product =
+                mypc->GetParticleContainerFromName(product_species_names[1]);
+            WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
+                first_product.getMass() > second_product.getMass(),
+                collision_name + ".scattering_angle_model = anisotropic requires the heavier "
+                "fusion product to be listed first in " + collision_name +
+                ".product_species. The angular-distribution coefficients describe the lighter "
+                "second product.");
+        }
     }
 
 #ifdef AMREX_USE_GPU
