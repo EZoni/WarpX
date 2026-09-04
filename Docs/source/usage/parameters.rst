@@ -3109,8 +3109,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     ``ENDF`` selects the orthonormal Legendre coefficients defined by the ENDF-6 format
     :cite:p:`param-BrownENDF2023`, which WarpX uses as given.
     ``IAEA`` selects the non-orthonormal coefficients tabulated by
-    :cite:t:`param-DrosgOtukaIAEA2015` and used in the cosine expansion of
-    :cite:t:`param-HigginsonJCP2019`. WarpX converts every IAEA coefficient before use
+    :cite:t:`param-DrosgOtukaIAEA2015`. WarpX converts every IAEA coefficient before use
     according to
 
     .. math::
