@@ -193,23 +193,24 @@ def get_neutron_spectrum(diag_dir, reaction):
     # exactly linear in its CM-frame direction cosine:
     # E_lab = gamma_cm * (E_n_cm + beta_cm * p_n_cm * c * mu_cm).
     neutron_energy_lab = gamma * m_neutron * scc.c**2
-    mu_cm = (neutron_energy_lab / cm_gamma - neutron_energy_cm) / (
-        cm_beta * neutron_momentum_cm_c
+    cos_theta = np.clip(
+        (neutron_energy_lab / cm_gamma - neutron_energy_cm)
+        / (cm_beta * neutron_momentum_cm_c),
+        -1.0,
+        1.0,
     )
-    theta_deg = np.degrees(np.arccos(np.clip(mu_cm, -1.0, 1.0)))
-    return energy_MeV, theta_deg, w
+    return energy_MeV, cos_theta, w
 
 
 def validate_neutron_spectrum(diag_dir, reaction):
-    energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir, reaction)
+    energy_MeV, cos_theta, w = get_neutron_spectrum(diag_dir, reaction)
     assert energy_MeV.size >= 1000, (
         f"Too few neutron macroparticles ({energy_MeV.size}) in {diag_dir}."
     )
     assert np.all(np.isfinite(energy_MeV))
-    assert np.all(np.isfinite(theta_deg))
+    assert np.all(np.isfinite(cos_theta))
     assert np.all(np.isfinite(w)) and np.all(w > 0.0)
 
-    cos_theta = np.cos(np.radians(theta_deg))
     mean_energy = weighted_mean(energy_MeV, w)
     std_energy = np.sqrt(weighted_mean((energy_MeV - mean_energy) ** 2, w))
     mean_cos_theta = weighted_mean(cos_theta, w)
@@ -256,8 +257,10 @@ def plot_neutron_spectra(diag_dirs, labels, reaction, config, output):
     ax_angle = ax_spectrum.twinx()
 
     for diag_dir, label in zip(diag_dirs, labels):
-        energy_MeV, theta_deg, w = get_neutron_spectrum(diag_dir, reaction)
+        energy_MeV, cos_theta, w = get_neutron_spectrum(diag_dir, reaction)
         assert energy_MeV.size > 0, f"No neutron macroparticles found in {diag_dir}."
+        # Convert to degrees only for plotting; arccos is ill-conditioned near mu = +-1.
+        theta_deg = np.degrees(np.arccos(cos_theta))
 
         # Histogram macroparticle weights to obtain the neutron energy spectrum.
         hist, edges = np.histogram(energy_MeV, bins=energy_bins, weights=w)
