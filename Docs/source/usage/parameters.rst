@@ -3096,6 +3096,10 @@ Details about the collision models can be found in the :ref:`theory section <mul
     With ``anisotropic``, the scattering angle is drawn from the anisotropic distribution as given by the differential cross section of the fusion reaction.
     For a two-product reaction, the coefficient table describes the lighter product; therefore,
     :pp:param:`<collision_name>.product_species` must list the heavier product first.
+    The anisotropic distribution is sampled about the global :math:`+z` axis. Therefore, the
+    first reactant listed in :pp:param:`<collision_name>.species` must be the projectile, and
+    its momentum in the center-of-mass frame must point along :math:`+z`. WarpX aborts with
+    an error if an anisotropic two-product fusion event does not satisfy this requirement.
 
 .. pp:param:: <collision_name>.fusion_angular_distribution_coefficients
     :type: ``string``
