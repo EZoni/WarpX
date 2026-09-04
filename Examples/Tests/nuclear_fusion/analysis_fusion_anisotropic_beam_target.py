@@ -13,7 +13,7 @@ import numpy as np
 import scipy.constants as scc
 from openpmd_viewer import OpenPMDTimeSeries
 
-sys.path.append("../../../Tools/Parser/")
+sys.path.append(str(Path(__file__).resolve().parents[3] / "Tools" / "Parser"))
 from input_file_parser import parse_input_file
 
 MASS = {
