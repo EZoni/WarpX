@@ -33,6 +33,7 @@ REACTION_CONFIG = {
         "scale": 1.0,
         "target_mass": MASS["deuteron"],
         "product_mass": MASS["helion"],
+        "species": "neutron_1",
     },
     "DT": {
         "e_min": 10.0,
@@ -42,6 +43,7 @@ REACTION_CONFIG = {
         "scale": 2.6,
         "target_mass": MASS["triton"],
         "product_mass": MASS["alpha"],
+        "species": "neutron_1",
     },
 }
 
@@ -192,7 +194,9 @@ def get_neutron_spectrum(diag_dir, reaction):
     ts = OpenPMDTimeSeries(diag_dir)
     iteration = ts.iterations[-1]
     ux, uy, uz, w = ts.get_particle(
-        ["ux", "uy", "uz", "w"], species="neutron_1", iteration=iteration
+        ["ux", "uy", "uz", "w"],
+        species=REACTION_CONFIG[reaction]["species"],
+        iteration=iteration,
     )
 
     u2 = ux**2 + uy**2 + uz**2
