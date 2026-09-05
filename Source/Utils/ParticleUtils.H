@@ -9,7 +9,6 @@
 
 #include "Particles/WarpXParticleContainer.H"
 #include "Utils/WarpXConst.H"
-#include "ablastr/warn_manager/WarnManager.H"
 
 #include <AMReX_DenseBins.H>
 #include <AMReX_Geometry.H>
@@ -28,6 +27,7 @@ namespace ScatteringUtils {
         amrex::ParticleReal const* m_coefficients = nullptr; ///< Row-major coefficients: row i holds m_num_coefficients values for energy i
         int m_num_energies = 0;      ///< Number of rows (energy points) in the table
         int m_num_coefficients = 0;  ///< Number of coefficients per energy row
+        int* m_energy_range_status = nullptr; ///< Per-event status: -1 below, 0 within, 1 above
 
         [[nodiscard]]
         AMREX_GPU_HOST_DEVICE AMREX_INLINE
@@ -44,9 +44,9 @@ namespace ScatteringUtils {
          * the coefficient at the nearest endpoint row is returned unchanged (constant
          * extrapolation / clamping). This is a deliberate, conservative choice that
          * keeps the angular distribution physical, but it silently discards any
-         * energy dependence outside the table range. A warning is emitted (once, on
-         * the host) the first time an out-of-range energy is encountered so that
-         * users can detect tables that do not cover their simulated energy regime.
+         * energy dependence outside the table range. The caller checks the energy
+         * range once per collision event and reports any out-of-range energies after
+         * the particle kernel has completed.
          *
          * @param[in] energy_MeV centre-of-mass energy in MeV
          * @param[in] coefficient_index column index into the coefficient table
@@ -61,27 +61,9 @@ namespace ScatteringUtils {
             using namespace amrex::literals;
 
             if (energy_MeV <= m_energies[0]) {
-                AMREX_IF_ON_HOST((
-                    ablastr::warn_manager::WMRecordWarning(
-                        "FusionAngularDistributionTable",
-                        "A particle energy is below the minimum energy in the "
-                        "fusion_angular_distribution_coefficients table. "
-                        "Endpoint angular distribution coefficients will be used. "
-                        "Verify that the table covers the simulated energy regime.",
-                        ablastr::warn_manager::WarnPriority::medium);
-                ))
                 return m_coefficients[coefficient_index];
             }
             if (energy_MeV >= m_energies[m_num_energies - 1]) {
-                AMREX_IF_ON_HOST((
-                    ablastr::warn_manager::WMRecordWarning(
-                        "FusionAngularDistributionTable",
-                        "A particle energy is above the maximum energy in the "
-                        "fusion_angular_distribution_coefficients table. "
-                        "Endpoint angular distribution coefficients will be used. "
-                        "Verify that the table covers the simulated energy regime.",
-                        ablastr::warn_manager::WarnPriority::medium);
-                ))
                 return m_coefficients[(m_num_energies - 1) * m_num_coefficients
                                       + coefficient_index];
             }
@@ -127,6 +109,16 @@ namespace ScatteringUtils {
         constexpr amrex::ParticleReal tol = 1.0e-8_prt;
         constexpr int iter_max = 100;
         int const l_max = a_Ll.m_num_coefficients - 1;
+
+        // This status is private to the current collision event. Recording it here avoids
+        // repeating the range check for every coefficient and every Newton iteration.
+        if (a_Ll.m_energy_range_status != nullptr) {
+            if (a_energy_MeV < a_Ll.m_energies[0]) {
+                *a_Ll.m_energy_range_status = -1;
+            } else if (a_energy_MeV > a_Ll.m_energies[a_Ll.m_num_energies - 1]) {
+                *a_Ll.m_energy_range_status = 1;
+            }
+        }
 
         amrex::ParticleReal mu = 0.0_prt;
 

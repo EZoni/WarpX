@@ -10,6 +10,7 @@
 #include "BinaryCollisionUtils.H"
 #include "Particles/MultiParticleContainer.H"
 #include "Utils/TextMsg.H"
+#include "ablastr/warn_manager/WarnManager.H"
 
 #include <AMReX_GpuContainers.H>
 #include <AMReX_ParmParse.H>
@@ -113,6 +114,29 @@ namespace {
             coefficient_file);
     }
 
+}
+
+void ParticleCreationFunc::RecordEnergyRangeWarnings (
+    int const minimum_status, int const maximum_status)
+{
+    if (minimum_status < 0) {
+        ablastr::warn_manager::WMRecordWarning(
+            "FusionAngularDistributionTable",
+            "A particle energy is below the minimum energy in the "
+            "fusion_angular_distribution_coefficients table. "
+            "Endpoint angular distribution coefficients will be used. "
+            "Verify that the table covers the simulated energy regime.",
+            ablastr::warn_manager::WarnPriority::medium);
+    }
+    if (maximum_status > 0) {
+        ablastr::warn_manager::WMRecordWarning(
+            "FusionAngularDistributionTable",
+            "A particle energy is above the maximum energy in the "
+            "fusion_angular_distribution_coefficients table. "
+            "Endpoint angular distribution coefficients will be used. "
+            "Verify that the table covers the simulated energy regime.",
+            ablastr::warn_manager::WarnPriority::medium);
+    }
 }
 
 ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
