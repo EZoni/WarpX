@@ -31,7 +31,7 @@ Start by reading AGENTS.md for the project conventions (style, portability, dime
 Call it <upstream>, then run `git fetch <upstream> development` followed by `git diff <upstream>/development...HEAD` to see the changes.
 Fetching first ensures the diff is taken against the latest upstream `development`, not a stale local copy.
 
-To learn the intended purpose of the changes, read the branch's commit messages (`git log <upstream>/development..HEAD`), and `gh pr view` if a pull request is already open.
+To learn the intended purpose of the changes, read the branch's commit messages (`git log <upstream>/development..HEAD`).
 Use the diff to locate the changes, then read the full changed files around each hunk before judging them: three lines of diff context is rarely enough to judge correctness.
 
 When a finding depends on AMReX behavior, ground it in real source rather than recalling it from memory, and read that source at the commit pinned as `commit_amrex` in `dependencies.json`, which is the AMReX version that CI builds against.
