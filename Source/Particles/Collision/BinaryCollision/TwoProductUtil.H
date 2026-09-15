@@ -202,14 +202,10 @@ namespace {
             p1y_star_in_d = p1y_in_d;
             p1z_star_in_d = p1z_in_d;
         }
-        p1_star_in_d = std::sqrt(p1x_star_in_d*p1x_star_in_d +
-                                 p1y_star_in_d*p1y_star_in_d +
-                                 p1z_star_in_d*p1z_star_in_d);
+        p1_star_in_d = std::sqrt(p1x_star_in_d*p1x_star_in_d + p1y_star_in_d*p1y_star_in_d + p1z_star_in_d*p1z_star_in_d);
 
         // If the incident direction is undefined, fall back to isotropic scattering.
-        const auto local_scattering_angle_model =
-            (p1_star_in_d <= std::numeric_limits<double>::min())
-                ? ScatteringAngleModel::Isotropic : scattering_angle_model;
+        const auto local_scattering_angle_model = (p1_star_in_d <= std::numeric_limits<double>::min()) ? ScatteringAngleModel::Isotropic : scattering_angle_model;
 
         // Determine the scattering angles in a frame whose +z axis is the incident direction.
         amrex::ParticleReal cos_theta = 1.0_prt;
@@ -219,13 +215,10 @@ namespace {
         } else if (local_scattering_angle_model == ScatteringAngleModel::Isotropic ||
                    local_scattering_angle_model == ScatteringAngleModel::Anisotropic_Legendre) {
             phi = 2.0_prt * MathConst::pi * amrex::Random(engine);
-            cos_theta = ParticleUtils::getRandomCosTheta(
-                engine, local_scattering_angle_model, anisotropic_coefficients,
-                E_kin_star_MeV, energy_range_status);
+            cos_theta = ParticleUtils::getRandomCosTheta(engine, local_scattering_angle_model, anisotropic_coefficients, E_kin_star_MeV, energy_range_status);
         }
 
-        const amrex::ParticleReal sin_theta =
-            std::sqrt(amrex::max(0.0_prt, 1.0_prt - cos_theta*cos_theta));
+        const amrex::ParticleReal sin_theta = std::sqrt(amrex::max(0.0_prt, 1.0_prt - cos_theta*cos_theta));
         const double px_local_d = p_star_f_d * static_cast<double>(sin_theta*std::cos(phi));
         const double py_local_d = p_star_f_d * static_cast<double>(sin_theta*std::sin(phi));
         const double pz_local_d = p_star_f_d * static_cast<double>(cos_theta);
@@ -241,8 +234,7 @@ namespace {
         double sin_phi_in_d = 0.0;
         if (p1_star_in_d > std::numeric_limits<double>::min()) {
             cos_theta_in_d = p1z_star_in_d/p1_star_in_d;
-            const double p1_perp_star_in_d = std::sqrt(
-                p1x_star_in_d*p1x_star_in_d + p1y_star_in_d*p1y_star_in_d);
+            const double p1_perp_star_in_d = std::sqrt(p1x_star_in_d*p1x_star_in_d + p1y_star_in_d*p1y_star_in_d);
             sin_theta_in_d = p1_perp_star_in_d/p1_star_in_d;
             // On the z axis, phi_in is undefined; retain phi_in = 0 as a convention.
             if (p1_perp_star_in_d > std::numeric_limits<double>::min()) {

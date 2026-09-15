@@ -183,12 +183,9 @@ public:
             m_fusion_angular_distribution_num_energies,
             m_fusion_angular_distribution_num_coefficients
         };
-        bool const check_anisotropic_energy_range =
-            t_scattering_angle_model == ScatteringAngleModel::Anisotropic_Legendre;
-        amrex::Gpu::DeviceVector<int> energy_range_status(
-            check_anisotropic_energy_range ? n_total_pairs : 0);
-        int* const p_energy_range_status = check_anisotropic_energy_range
-            ? energy_range_status.data() : nullptr;
+        bool const check_anisotropic_energy_range = t_scattering_angle_model == ScatteringAngleModel::Anisotropic_Legendre;
+        amrex::Gpu::DeviceVector<int> energy_range_status(check_anisotropic_energy_range ? n_total_pairs : 0);
+        int* const p_energy_range_status = check_anisotropic_energy_range ? energy_range_status.data() : nullptr;
 
         amrex::ParallelForRNG(n_total_pairs,
         [=] AMREX_GPU_DEVICE (int i, amrex::RandomEngine const& engine) noexcept
@@ -290,8 +287,7 @@ public:
         });
 
         if (check_anisotropic_energy_range) {
-            auto const [minimum_status, maximum_status] =
-                amrex::Reduce::MinMax(n_total_pairs, p_energy_range_status);
+            auto const [minimum_status, maximum_status] = amrex::Reduce::MinMax(n_total_pairs, p_energy_range_status);
             RecordEnergyRangeWarnings(minimum_status, maximum_status);
         }
 

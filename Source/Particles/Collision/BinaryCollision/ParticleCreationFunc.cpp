@@ -32,8 +32,7 @@ namespace {
     {
         std::ifstream infile(coefficient_file);
         if (!infile.is_open()) {
-            WARPX_ABORT_WITH_MESSAGE(
-                "Failed to open fusion angular-distribution data file: " + coefficient_file);
+            WARPX_ABORT_WITH_MESSAGE("Failed to open fusion angular-distribution data file: " + coefficient_file);
         }
 
         // Will be set from the first non-empty row; all subsequent rows must match.
@@ -91,8 +90,7 @@ namespace {
                     std::to_string(line_number));
 
                 for (int l = 0; l < num_coefficients; ++l) {
-                    coefficients.push_back(
-                        (values[l + 1] / A_0) / static_cast<amrex::ParticleReal>(2 * l + 1));
+                    coefficients.push_back((values[l + 1] / A_0) / static_cast<amrex::ParticleReal>(2 * l + 1));
                 }
             } else {
                 for (int l = 0; l < num_coefficients; ++l) {
@@ -103,15 +101,13 @@ namespace {
 
         // Distinguish a clean EOF from a low-level I/O error.
         if (infile.bad()) {
-            WARPX_ABORT_WITH_MESSAGE(
-                "Failed to read fusion angular-distribution data from file: " + coefficient_file);
+            WARPX_ABORT_WITH_MESSAGE("Failed to read fusion angular-distribution data from file: " + coefficient_file);
         }
 
         // At least two energy points are required to perform linear interpolation.
         WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
             energies.size() > 1u,
-            "Fusion angular-distribution data file must contain at least two energy rows for "
-            "interpolation: " +
+            "Fusion angular-distribution data file must contain at least two energy rows for interpolation: " +
             coefficient_file);
     }
 
@@ -184,16 +180,13 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
     // Optionally load an energy-dependent table of coefficients that
     // describes the anisotropic angular distribution of fusion products.
     std::string fusion_angular_distribution_coefficients_file;
-    if (pp_collision_name.query(
-            "fusion_angular_distribution_coefficients",
-            fusion_angular_distribution_coefficients_file))
+    if (pp_collision_name.query("fusion_angular_distribution_coefficients", fusion_angular_distribution_coefficients_file))
     {
         // Initialize only to avoid a compiler warning; get_enum_case_insensitive requires and
         // overwrites this parameter, so the initial value has no effect in practice.
         FusionAngularDistributionCoefficientsFormat coefficient_format =
             FusionAngularDistributionCoefficientsFormat::ENDF;
-        pp_collision_name.get_enum_case_insensitive(
-            "fusion_angular_distribution_coefficients_format", coefficient_format);
+        pp_collision_name.get_enum_case_insensitive("fusion_angular_distribution_coefficients_format", coefficient_format);
 
         // Temporary host-side storage for the table data.
         amrex::Gpu::HostVector<amrex::ParticleReal> h_energies;
@@ -217,8 +210,7 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
 #else
         // CPU path: DeviceVector uses host memory, so std::copy suffices.
         std::copy(h_energies.begin(), h_energies.end(), m_fusion_angular_distribution_energies.begin());
-        std::copy(h_coefficients.begin(), h_coefficients.end(),
-                  m_fusion_angular_distribution_coefficients.begin());
+        std::copy(h_coefficients.begin(), h_coefficients.end(), m_fusion_angular_distribution_coefficients.begin());
 #endif
     }
 
@@ -230,8 +222,7 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
         WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
             m_collision_type != CollisionType::ProtonBoronToAlphasFusion
                 || m_scattering_angle_model != ScatteringAngleModel::Anisotropic_Legendre,
-            "scattering_angle_model = anisotropic_legendre is not supported for proton-boron "
-            "fusion.");
+            "scattering_angle_model = anisotropic_legendre is not supported for proton-boron fusion.");
 
         WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
             m_scattering_angle_model != ScatteringAngleModel::Anisotropic_Legendre
@@ -245,10 +236,8 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
         {
             amrex::Vector<std::string> product_species_names;
             pp_collision_name.getarr("product_species", product_species_names);
-            auto const& first_product =
-                mypc->GetParticleContainerFromName(product_species_names[0]);
-            auto const& second_product =
-                mypc->GetParticleContainerFromName(product_species_names[1]);
+            auto const& first_product = mypc->GetParticleContainerFromName(product_species_names[0]);
+            auto const& second_product = mypc->GetParticleContainerFromName(product_species_names[1]);
             WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
                 first_product.getMass() > second_product.getMass(),
                 collision_name + ".scattering_angle_model = anisotropic_legendre requires the heavier "
