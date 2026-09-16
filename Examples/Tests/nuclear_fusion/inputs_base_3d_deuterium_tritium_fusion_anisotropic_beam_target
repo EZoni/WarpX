@@ -14,10 +14,10 @@ collisions.collision_names = DTNHeF                      # name of collision pro
 DTNHeF.event_multiplier = 1.e10                          # variance reduction: boost rare event rate
 DTNHeF.fusion_angular_distribution_coefficients = ../../../../warpx-data/nuclear_fusion/T_d_n_He4/angular_distribution/iaea/coefficients.txt
 DTNHeF.fusion_angular_distribution_coefficients_format = IAEA
-DTNHeF.product_species = helium4_1 neutron_1             # fusion products: He-4 + neutron
+DTNHeF.product_species = neutron_1 helium4_1             # emitted neutron, then residual helium-4
 DTNHeF.scattering_angle_model = anisotropic_legendre     # realistic data-driven emission angles
-DTNHeF.species = deuterium_beam tritium_target           # reactants
-DTNHeF.type = nuclearfusion                              # D + T -> He-4 + n
+DTNHeF.species = deuterium_beam tritium_target           # incident deuteron, then tritium target
+DTNHeF.type = nuclearfusion                              # T(d,n)He4
 
 # ===== Deuterium beam (drifting reactant) =====
 deuterium_beam.density = n0                              # number density

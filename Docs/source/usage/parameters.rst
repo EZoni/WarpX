@@ -2999,6 +2999,13 @@ Details about the collision models can be found in the :ref:`theory section <mul
     In these four cases, only one species name should be given.
     If using ``linear_breit_wheeler`` these should be two photon species.
     If using ``linear_compton``, these should be two species: first, a photon species, and second, a lepton species, in this exact order.
+    If using two-product ``nuclearfusion`` with ``scattering_angle_model = anisotropic_legendre``,
+    consider the reaction to be ordered as ``A + B -> C + D``. The first entry in ``species``
+    must be the incident reactant ``A``, and the second must be the target reactant ``B``. The
+    scattering angle is measured between the momenta of ``A`` and ``C`` in the center-of-momentum
+    frame.
+    For example, T(d,n)He4 corresponds to ``d + T -> n + He4``, so ``species`` must list the
+    deuterium species first and the tritium species second.
 
 .. pp:param:: <collision_name>.product_species
     :type: ``strings``
@@ -3012,8 +3019,10 @@ Details about the collision models can be found in the :ref:`theory section <mul
     If using ``linear_compton``, these should be two species: first, a photon species, and second, a lepton species, in this exact order.
     If using ``pulsed_decay``, the sum of the product species charges and mass must equal those of the parent species.
     If using two-product ``nuclearfusion`` with ``scattering_angle_model = anisotropic_legendre``,
-    the heavier product must be listed first and the lighter product second. The angular
-    distribution coefficient table describes the lighter, second product.
+    consider the reaction to be ordered as ``A + B -> C + D``, as described for
+    :pp:param:`<collision_name>.species`. The first entry in ``product_species`` must be product
+    ``C``, and the second must be product ``D``. For example, T(d,n)He4 corresponds to
+    ``d + T -> n + He4``, so ``product_species`` must list the neutron first and helium4 second.
 
 .. pp:param:: <collision_name>.ndt_supercycle
     :type: ``int``
@@ -3117,10 +3126,10 @@ Details about the collision models can be found in the :ref:`theory section <mul
     With ``anisotropic_legendre``, the scattering angle is drawn from the anisotropic
     distribution represented by a Legendre expansion of the differential cross section of the
     fusion reaction.
-    For a two-product reaction, the coefficient table describes the lighter product; therefore,
-    :pp:param:`<collision_name>.product_species` must list the heavier product first.
-    The anisotropic distribution is sampled about the incident direction of the first reactant
-    listed in :pp:param:`<collision_name>.species`, in the center-of-mass frame.
+    For a two-product reaction written as ``A + B -> C + D``, the anisotropic distribution gives
+    the angle between the momenta of the incident reactant ``A`` and product ``C`` in the
+    center-of-momentum frame. Therefore, :pp:param:`<collision_name>.species` must be ordered as
+    ``A B``, and :pp:param:`<collision_name>.product_species` must be ordered as ``C D``.
 
 .. pp:param:: <collision_name>.fusion_angular_distribution_coefficients
     :type: ``string``
@@ -3131,8 +3140,9 @@ Details about the collision models can be found in the :ref:`theory section <mul
     center-of-mass energy in MeV followed by all coefficients from order zero upward. The
     zeroth-order coefficient and at least one higher-order coefficient are required.
     At least two rows are required, and their energies must be strictly increasing.
-    For two-product fusion, these coefficients describe the lighter product, which must be
-    listed second in :pp:param:`<collision_name>.product_species`.
+    For two-product fusion written as ``A + B -> C + D``, these coefficients describe the angle
+    between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum
+    frame.
 
 .. pp:param:: <collision_name>.fusion_angular_distribution_coefficients_format
     :type: ``string``

@@ -180,7 +180,8 @@ namespace {
         const double one_minus_beta_sq_d = amrex::max(1.0 - vc_sq_d*inv_c2_d, std::numeric_limits<double>::epsilon());
         const double gc_d = 1.0 / std::sqrt(one_minus_beta_sq_d);
 
-        // Compute the direction of the first incident particle in the center of mass frame.
+        // Compute the direction of the first incident particle in the center-of-momentum frame.
+        // For a reaction ordered A + B -> C + D, cos(theta) is defined between A and C.
         double p1x_star_in_d = 0.0;
         double p1y_star_in_d = 0.0;
         double p1z_star_in_d = 0.0;

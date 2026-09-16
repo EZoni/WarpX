@@ -234,16 +234,46 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
         if (m_scattering_angle_model == ScatteringAngleModel::Anisotropic_Legendre
             && BinaryCollisionUtils::is_two_product_fusion_type(m_collision_type))
         {
+            amrex::Vector<std::string> species_names;
+            pp_collision_name.getarr("species", species_names);
             amrex::Vector<std::string> product_species_names;
             pp_collision_name.getarr("product_species", product_species_names);
+            auto const& first_species = mypc->GetParticleContainerFromName(species_names[0]);
             auto const& first_product = mypc->GetParticleContainerFromName(product_species_names[0]);
-            auto const& second_product = mypc->GetParticleContainerFromName(product_species_names[1]);
+
+            bool valid_species_order = true;
+            bool valid_product_species_order = false;
+            std::string required_order;
+            if (m_collision_type == CollisionType::DeuteriumTritiumToNeutronHeliumFusion)
+            {
+                valid_species_order = first_species.AmIA<PhysicalSpecies::hydrogen2>();
+                valid_product_species_order = first_product.AmIA<PhysicalSpecies::neutron>();
+                required_order = "deuterium tritium -> neutron helium4";
+            }
+            else if (m_collision_type == CollisionType::DeuteriumDeuteriumToNeutronHeliumFusion)
+            {
+                valid_product_species_order = first_product.AmIA<PhysicalSpecies::neutron>();
+                required_order = "deuterium deuterium -> neutron helium3";
+            }
+            else if (m_collision_type == CollisionType::DeuteriumDeuteriumToProtonTritiumFusion)
+            {
+                valid_product_species_order = first_product.AmIA<PhysicalSpecies::proton>();
+                required_order = "deuterium deuterium -> proton tritium";
+            }
+            else if (m_collision_type == CollisionType::DeuteriumHeliumToProtonHeliumFusion)
+            {
+                valid_species_order = first_species.AmIA<PhysicalSpecies::hydrogen2>();
+                valid_product_species_order = first_product.AmIA<PhysicalSpecies::proton>();
+                required_order = "deuterium helium3 -> proton helium4";
+            }
+
             WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
-                first_product.getMass() > second_product.getMass(),
-                collision_name + ".scattering_angle_model = anisotropic_legendre requires the heavier "
-                "fusion product to be listed first in " + collision_name +
-                ".product_species. The angular-distribution coefficients describe the lighter "
-                "second product.");
+                valid_species_order && valid_product_species_order,
+                collision_name + ".scattering_angle_model = anisotropic_legendre requires " +
+                collision_name + ".species and " + collision_name +
+                ".product_species to use the reaction order A + B -> C + D. cos(theta) is "
+                "the angle between the momenta of A and C in the center-of-momentum frame. "
+                "For this reaction, the required order is " + required_order + ".");
         }
     }
 
