@@ -120,7 +120,7 @@ void ParticleCreationFunc::RecordEnergyRangeWarnings (
         ablastr::warn_manager::WMRecordWarning(
             "FusionAngularDistributionTable",
             "A particle energy is below the minimum energy in the "
-            "fusion_angular_distribution_coefficients table. "
+            "legendre_angular_distribution_coefficients table. "
             "Endpoint angular distribution coefficients will be used. "
             "Verify that the table covers the simulated energy regime.",
             ablastr::warn_manager::WarnPriority::medium);
@@ -129,7 +129,7 @@ void ParticleCreationFunc::RecordEnergyRangeWarnings (
         ablastr::warn_manager::WMRecordWarning(
             "FusionAngularDistributionTable",
             "A particle energy is above the maximum energy in the "
-            "fusion_angular_distribution_coefficients table. "
+            "legendre_angular_distribution_coefficients table. "
             "Endpoint angular distribution coefficients will be used. "
             "Verify that the table covers the simulated energy regime.",
             ablastr::warn_manager::WarnPriority::medium);
@@ -179,38 +179,38 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
 
     // Optionally load an energy-dependent table of coefficients that
     // describes the anisotropic angular distribution of fusion products.
-    std::string fusion_angular_distribution_coefficients_file;
-    if (pp_collision_name.query("fusion_angular_distribution_coefficients", fusion_angular_distribution_coefficients_file))
+    std::string legendre_angular_distribution_coefficients_file;
+    if (pp_collision_name.query("legendre_angular_distribution_coefficients", legendre_angular_distribution_coefficients_file))
     {
         // Initialize only to avoid a compiler warning; get_enum_case_insensitive requires and
         // overwrites this parameter, so the initial value has no effect in practice.
         FusionAngularDistributionCoefficientsFormat coefficient_format =
             FusionAngularDistributionCoefficientsFormat::ENDF;
-        pp_collision_name.get_enum_case_insensitive("fusion_angular_distribution_coefficients_format", coefficient_format);
+        pp_collision_name.get_enum_case_insensitive("legendre_angular_distribution_coefficients_format", coefficient_format);
 
         // Temporary host-side storage for the table data.
         amrex::Gpu::HostVector<amrex::ParticleReal> h_energies;
         amrex::Gpu::HostVector<amrex::ParticleReal> h_coefficients;
-        // Parse the file; sets m_fusion_angular_distribution_num_coefficients
+        // Parse the file; sets m_legendre_angular_distribution_num_coefficients
         // to the number of coefficients per energy point.
         readFusionAngularDistributionFile(
-            fusion_angular_distribution_coefficients_file, h_energies, h_coefficients,
-            m_fusion_angular_distribution_num_coefficients, coefficient_format);
+            legendre_angular_distribution_coefficients_file, h_energies, h_coefficients,
+            m_legendre_angular_distribution_num_coefficients, coefficient_format);
 
         // Record the number of energy points and size the device vectors.
-        m_fusion_angular_distribution_num_energies = static_cast<int>(h_energies.size());
-        m_fusion_angular_distribution_energies.resize(h_energies.size());
-        m_fusion_angular_distribution_coefficients.resize(h_coefficients.size());
+        m_legendre_angular_distribution_num_energies = static_cast<int>(h_energies.size());
+        m_legendre_angular_distribution_energies.resize(h_energies.size());
+        m_legendre_angular_distribution_coefficients.resize(h_coefficients.size());
 #ifdef AMREX_USE_GPU
         // Upload energy grid and coefficient table to device memory.
         amrex::Gpu::copy(amrex::Gpu::hostToDevice, h_energies.begin(), h_energies.end(),
-                         m_fusion_angular_distribution_energies.begin());
+                         m_legendre_angular_distribution_energies.begin());
         amrex::Gpu::copy(amrex::Gpu::hostToDevice, h_coefficients.begin(), h_coefficients.end(),
-                         m_fusion_angular_distribution_coefficients.begin());
+                         m_legendre_angular_distribution_coefficients.begin());
 #else
         // CPU path: DeviceVector uses host memory, so std::copy suffices.
-        std::copy(h_energies.begin(), h_energies.end(), m_fusion_angular_distribution_energies.begin());
-        std::copy(h_coefficients.begin(), h_coefficients.end(), m_fusion_angular_distribution_coefficients.begin());
+        std::copy(h_energies.begin(), h_energies.end(), m_legendre_angular_distribution_energies.begin());
+        std::copy(h_coefficients.begin(), h_coefficients.end(), m_legendre_angular_distribution_coefficients.begin());
 #endif
     }
 
@@ -226,9 +226,9 @@ ParticleCreationFunc::ParticleCreationFunc (const std::string& collision_name,
 
         WARPX_ALWAYS_ASSERT_WITH_MESSAGE(
             m_scattering_angle_model != ScatteringAngleModel::Legendre
-            || m_fusion_angular_distribution_num_energies > 0,
+            || m_legendre_angular_distribution_num_energies > 0,
             "<collision_name>.scattering_angle_model = legendre requires "
-            "<collision_name>.fusion_angular_distribution_coefficients to be set "
+            "<collision_name>.legendre_angular_distribution_coefficients to be set "
             "to a valid table file.");
 
         if (m_scattering_angle_model == ScatteringAngleModel::Legendre

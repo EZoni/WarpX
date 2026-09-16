@@ -178,10 +178,10 @@ public:
         const CollisionType t_collision_type = m_collision_type;
         const ScatteringAngleModel t_scattering_angle_model = m_scattering_angle_model;
         const ScatteringUtils::AnisotropicCoefficientTable t_anisotropic_coefficients{
-            m_fusion_angular_distribution_energies.empty() ? nullptr : m_fusion_angular_distribution_energies.data(),
-            m_fusion_angular_distribution_coefficients.empty() ? nullptr : m_fusion_angular_distribution_coefficients.data(),
-            m_fusion_angular_distribution_num_energies,
-            m_fusion_angular_distribution_num_coefficients
+            m_legendre_angular_distribution_energies.empty() ? nullptr : m_legendre_angular_distribution_energies.data(),
+            m_legendre_angular_distribution_coefficients.empty() ? nullptr : m_legendre_angular_distribution_coefficients.data(),
+            m_legendre_angular_distribution_num_energies,
+            m_legendre_angular_distribution_num_coefficients
         };
         bool const check_anisotropic_energy_range = t_scattering_angle_model == ScatteringAngleModel::Legendre;
         amrex::Gpu::DeviceVector<int> energy_range_status(check_anisotropic_energy_range ? n_total_pairs : 0);
@@ -317,10 +317,10 @@ private:
     amrex::Gpu::HostVector<int> m_num_products_host;
     CollisionType m_collision_type;
     ScatteringAngleModel m_scattering_angle_model{ScatteringAngleModel::Default};
-    amrex::Gpu::DeviceVector<amrex::ParticleReal> m_fusion_angular_distribution_energies;
-    amrex::Gpu::DeviceVector<amrex::ParticleReal> m_fusion_angular_distribution_coefficients;
-    int m_fusion_angular_distribution_num_energies = 0;
-    int m_fusion_angular_distribution_num_coefficients = 0;
+    amrex::Gpu::DeviceVector<amrex::ParticleReal> m_legendre_angular_distribution_energies;
+    amrex::Gpu::DeviceVector<amrex::ParticleReal> m_legendre_angular_distribution_coefficients;
+    int m_legendre_angular_distribution_num_energies = 0;
+    int m_legendre_angular_distribution_num_coefficients = 0;
 };
 
 

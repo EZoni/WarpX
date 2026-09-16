@@ -3122,7 +3122,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     For a two-product reaction written as ``A + B -> C + D``, the anisotropic distribution gives the angle between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum frame.
     Therefore, :pp:param:`<collision_name>.species` must be ordered as ``A B``, and :pp:param:`<collision_name>.product_species` must be ordered as ``C D``.
 
-.. pp:param:: <collision_name>.fusion_angular_distribution_coefficients
+.. pp:param:: <collision_name>.legendre_angular_distribution_coefficients
     :type: ``string``
     :optional:
 
@@ -3133,10 +3133,10 @@ Details about the collision models can be found in the :ref:`theory section <mul
     At least two rows are required, and their energies must be strictly increasing.
     For two-product fusion written as ``A + B -> C + D``, these coefficients describe the angle between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum frame.
 
-.. pp:param:: <collision_name>.fusion_angular_distribution_coefficients_format
+.. pp:param:: <collision_name>.legendre_angular_distribution_coefficients_format
     :type: ``string``
 
-    Format of :pp:param:`<collision_name>.fusion_angular_distribution_coefficients`.
+    Format of :pp:param:`<collision_name>.legendre_angular_distribution_coefficients`.
     This parameter is required when a coefficient table is specified.
     ``ENDF`` selects the orthonormal Legendre coefficients defined by the ENDF-6 format :cite:p:`param-BrownENDF2023`, which WarpX uses as given.
     ``IAEA`` selects the non-orthonormal coefficients tabulated by :cite:t:`param-DrosgOtukaIAEA2015`.
