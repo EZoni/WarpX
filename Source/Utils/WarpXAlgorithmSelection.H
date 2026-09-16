@@ -200,7 +200,7 @@ AMREX_ENUM(ScatteringAngleModel,
            Forward,    /**< Scattering angle is zero, i.e., products have the same direction as the incident particle in the center of mass frame */
            Backward,   /**< Scattering angle is pi, i.e., products have the opposite direction of the incident particle in the center of mass frame */
            Isotropic,  /**< Scattering angle is random, i.e., products are scattered isotropically in the center of mass frame */
-           Anisotropic_Legendre, /**< Scattering angle is sampled from a Legendre expansion */
+           Legendre, /**< Scattering angle is sampled from a Legendre expansion */
            Default = Isotropic  /**< Isotropic */
 );
 

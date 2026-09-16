@@ -214,7 +214,7 @@ namespace {
         if (local_scattering_angle_model == ScatteringAngleModel::Backward) {
             cos_theta = -1.0_prt;
         } else if (local_scattering_angle_model == ScatteringAngleModel::Isotropic ||
-                   local_scattering_angle_model == ScatteringAngleModel::Anisotropic_Legendre) {
+                   local_scattering_angle_model == ScatteringAngleModel::Legendre) {
             phi = 2.0_prt * MathConst::pi * amrex::Random(engine);
             cos_theta = ParticleUtils::getRandomCosTheta(engine, local_scattering_angle_model, anisotropic_coefficients, E_kin_star_MeV, energy_range_status);
         }

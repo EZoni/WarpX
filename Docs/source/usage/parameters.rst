@@ -2999,7 +2999,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     In these four cases, only one species name should be given.
     If using ``linear_breit_wheeler`` these should be two photon species.
     If using ``linear_compton``, these should be two species: first, a photon species, and second, a lepton species, in this exact order.
-    If using two-product ``nuclearfusion`` with ``scattering_angle_model = anisotropic_legendre``, consider the reaction to be ordered as ``A + B -> C + D``.
+    If using two-product ``nuclearfusion`` with ``scattering_angle_model = legendre``, consider the reaction to be ordered as ``A + B -> C + D``.
     The first entry in ``species`` must be the incident reactant ``A``, and the second must be the target reactant ``B``.
     The scattering angle is measured between the momenta of ``A`` and ``C`` in the center-of-momentum frame.
     For example, T(d,n)He4 corresponds to ``d + T -> n + He4``, so ``species`` must list the deuterium species first and the tritium species second.
@@ -3015,7 +3015,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     If using ``bremsstrahlung``, the product species must be of type photon.
     If using ``linear_compton``, these should be two species: first, a photon species, and second, a lepton species, in this exact order.
     If using ``pulsed_decay``, the sum of the product species charges and mass must equal those of the parent species.
-    If using two-product ``nuclearfusion`` with ``scattering_angle_model = anisotropic_legendre``, consider the reaction to be ordered as ``A + B -> C + D``, as described for :pp:param:`<collision_name>.species`.
+    If using two-product ``nuclearfusion`` with ``scattering_angle_model = legendre``, consider the reaction to be ordered as ``A + B -> C + D``, as described for :pp:param:`<collision_name>.species`.
     The first entry in ``product_species`` must be product ``C``, and the second must be product ``D``.
     For example, T(d,n)He4 corresponds to ``d + T -> n + He4``, so ``product_species`` must list the neutron first and helium4 second.
 
@@ -3114,11 +3114,11 @@ Details about the collision models can be found in the :ref:`theory section <mul
     :optional:
 
     Only for ``nuclearfusion``. The scattering angle for the products of the fusion reaction.
-    The possible values are ``isotropic``, ``forward``, ``backward``, and ``anisotropic_legendre``.
+    The possible values are ``isotropic``, ``forward``, ``backward``, and ``legendre``.
     With ``isotropic``, the scattering angle is drawn from an isotropic distribution.
     With ``forward``, the scattering angle is set to zero, i.e. the products are emitted in the same direction as the reactant (in the center of mass frame).
     With ``backward``, the scattering angle is set to :math:`\pi`, i.e. the products are emitted in the opposite direction of the reactant (in the center of mass frame).
-    With ``anisotropic_legendre``, the scattering angle is drawn from the anisotropic distribution represented by a Legendre expansion of the differential cross section of the fusion reaction.
+    With ``legendre``, the scattering angle is drawn from the anisotropic distribution represented by a Legendre expansion of the differential cross section of the fusion reaction.
     For a two-product reaction written as ``A + B -> C + D``, the anisotropic distribution gives the angle between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum frame.
     Therefore, :pp:param:`<collision_name>.species` must be ordered as ``A B``, and :pp:param:`<collision_name>.product_species` must be ordered as ``C D``.
 
@@ -3127,7 +3127,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     :optional:
 
     Only for ``nuclearfusion``.
-    Path to an energy-dependent table of Legendre coefficients used by the ``anisotropic_legendre`` scattering angle model.
+    Path to an energy-dependent table of Legendre coefficients used by the ``legendre`` scattering angle model.
     Each nonempty row contains a center-of-mass energy in MeV followed by all coefficients from order zero upward.
     The zeroth-order coefficient and at least one higher-order coefficient are required.
     At least two rows are required, and their energies must be strictly increasing.
