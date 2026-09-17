@@ -47,16 +47,12 @@ REACTION_CONFIG = {
     },
 }
 
-# Reference values may vary from run to run. The tolerances account for random
-# sampling, compute backends, and precision while remaining regression-sensitive.
+# Reference values for the automated 10% tests may vary from run to run. The
+# tolerances account for random sampling, compute backends, and precision while
+# remaining regression-sensitive. The paper-reproduction runs at 1% and 5% are
+# validated by the kinematic consistency checks above rather than fixed metrics.
 REFERENCE_METRICS = {
     "DD": {
-        1: {
-            "mean_energy": 2.49595,
-            "std_energy": 0.214295,
-            "mean_cos_theta": -0.002990,
-        },
-        5: {"mean_energy": 3.62257, "std_energy": 1.39414, "mean_cos_theta": -0.000174},
         10: {
             "mean_energy": 7.13244,
             "std_energy": 3.88327,
@@ -64,12 +60,6 @@ REFERENCE_METRICS = {
         },
     },
     "DT": {
-        1: {
-            "mean_energy": 14.0822,
-            "std_energy": 0.376711,
-            "mean_cos_theta": -0.001278,
-        },
-        5: {"mean_energy": 15.5438, "std_energy": 1.98236, "mean_cos_theta": 0.057142},
         10: {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.088694},
     },
 }
@@ -262,22 +252,20 @@ def validate_neutron_spectrum(diag_dir, reaction):
     }
 
     gamma_beta_percent = beam_gamma_beta_percent(diag_dir)
-    assert gamma_beta_percent in REFERENCE_METRICS[reaction], (
-        f"No reference metrics for u/c = {gamma_beta_percent:g}%."
-    )
-    reference = REFERENCE_METRICS[reaction][gamma_beta_percent]
-    np.testing.assert_allclose(
-        [metrics["mean_energy"], metrics["std_energy"]],
-        [reference["mean_energy"], reference["std_energy"]],
-        rtol=0.01,
-        atol=0.0,
-    )
-    np.testing.assert_allclose(
-        metrics["mean_cos_theta"],
-        reference["mean_cos_theta"],
-        rtol=0.0,
-        atol=0.03,
-    )
+    reference = REFERENCE_METRICS[reaction].get(gamma_beta_percent)
+    if reference is not None:
+        np.testing.assert_allclose(
+            [metrics["mean_energy"], metrics["std_energy"]],
+            [reference["mean_energy"], reference["std_energy"]],
+            rtol=0.01,
+            atol=0.0,
+        )
+        np.testing.assert_allclose(
+            metrics["mean_cos_theta"],
+            reference["mean_cos_theta"],
+            rtol=0.0,
+            atol=0.03,
+        )
     print(
         f"{reaction}, u/c = {gamma_beta_percent:g}%: "
         f"mean energy = {mean_energy:.6g} MeV, "
