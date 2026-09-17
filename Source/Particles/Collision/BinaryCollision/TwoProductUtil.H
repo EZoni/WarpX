@@ -212,14 +212,11 @@ namespace {
             n1z_star_out = static_cast<amrex::ParticleReal>(p1z_star_in_d/p1_star_in_d);
         }
 
-        // Choose the polar deflection and azimuthal angle in the COM frame. If the
-        // incident direction is undefined, fall back to isotropic scattering.
-        const auto local_scattering_angle_model = has_incident_direction
-            ? scattering_angle_model : ScatteringAngleModel::Isotropic;
+        // Choose the polar deflection and azimuthal angle in the COM frame.
+        // If the incident direction is undefined, fall back to isotropic scattering.
+        const auto local_scattering_angle_model = has_incident_direction ? scattering_angle_model : ScatteringAngleModel::Isotropic;
         const amrex::ParticleReal phi = 2.0_prt * MathConst::pi * amrex::Random(engine);
-        amrex::ParticleReal costh = ParticleUtils::getRandomCosTheta(
-            engine, local_scattering_angle_model, anisotropic_coefficients,
-            E_kin_star_MeV, energy_range_status);
+        amrex::ParticleReal costh = ParticleUtils::getRandomCosTheta(engine, local_scattering_angle_model, anisotropic_coefficients, E_kin_star_MeV, energy_range_status);
         if (local_scattering_angle_model == ScatteringAngleModel::Backward)
         {
             costh = -1.0_prt;
