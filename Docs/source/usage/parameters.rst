@@ -3133,6 +3133,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     The zeroth-order coefficient and at least one higher-order coefficient are required.
     At least two rows are required, and their energies must be strictly increasing.
     For two-product fusion written as ``A + B -> C + D``, these coefficients describe the angle between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum frame.
+    Example coefficient tables are available in the `WarpX data repository <https://github.com/BLAST-WarpX/warpx-data/tree/master/nuclear_fusion>`__.
 
 .. pp:param:: <collision_name>.legendre_angular_distribution_coefficients_format
     :type: ``string``
@@ -3149,6 +3150,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
 
     The value is case-insensitive.
     The zeroth-order IAEA coefficient must be nonzero in every row.
+    Example coefficient tables are available in the `WarpX data repository <https://github.com/BLAST-WarpX/warpx-data/tree/master/nuclear_fusion>`__.
 
 .. pp:param:: <collision_name>.create_products
     :type: ``bool``
