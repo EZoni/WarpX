@@ -3121,6 +3121,7 @@ Details about the collision models can be found in the :ref:`theory section <mul
     With ``legendre``, the scattering angle is drawn from the anisotropic distribution represented by a Legendre expansion of the differential cross section of the fusion reaction.
     For a two-product reaction written as ``A + B -> C + D``, the anisotropic distribution gives the angle between the momenta of the incident reactant ``A`` and product ``C`` in the center-of-momentum frame.
     Therefore, :pp:param:`<collision_name>.species` must be ordered as ``A B``, and :pp:param:`<collision_name>.product_species` must be ordered as ``C D``.
+    See :cite:t:`param-VanDeWeteringPRE2025` for a discussion of the importance of anisotropic scattering for nuclear fusion reactions.
 
 .. pp:param:: <collision_name>.legendre_angular_distribution_coefficients
     :type: ``string``
