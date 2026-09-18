@@ -216,11 +216,7 @@ namespace {
         // If the incident direction is undefined, fall back to isotropic scattering.
         const auto local_scattering_angle_model = has_incident_direction ? scattering_angle_model : ScatteringAngleModel::Isotropic;
         const amrex::ParticleReal phi = 2.0_prt * MathConst::pi * amrex::Random(engine);
-        amrex::ParticleReal costh = ParticleUtils::getRandomCosTheta(engine, local_scattering_angle_model, anisotropic_coefficients, E_kin_star_MeV, energy_range_status);
-        if (local_scattering_angle_model == ScatteringAngleModel::Backward)
-        {
-            costh = -1.0_prt;
-        }
+        const amrex::ParticleReal costh = ParticleUtils::getRandomCosTheta(engine, local_scattering_angle_model, anisotropic_coefficients, E_kin_star_MeV, energy_range_status);
         ParticleUtils::rotateVector(n1x_star_out, n1y_star_out, n1z_star_out, phi, costh);
 
         // Scale the scattered direction to the outgoing COM momentum magnitude.

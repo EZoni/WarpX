@@ -214,8 +214,8 @@ public:
         const amrex::ParticleReal up = sqrt(E_out * (E_out + 2.0_prt*mc2) / c2) / m_mass1;
 
         // isotropically scatter electrons
-        ParticleUtils::RandomizeVelocity(ux, uy, uz, up, engine, ScatteringAngleModel::Isotropic);
-        ParticleUtils::RandomizeVelocity(e_ux, e_uy, e_uz, up, engine, ScatteringAngleModel::Isotropic);
+        ParticleUtils::RandomizeVelocity(ux, uy, uz, up, engine);
+        ParticleUtils::RandomizeVelocity(e_ux, e_uy, e_uz, up, engine);
 
         // get velocities for the ion from a Maxwellian distribution
         i_ux = ion_vel_std * RandomNormal(0_prt, 1.0_prt, engine);
