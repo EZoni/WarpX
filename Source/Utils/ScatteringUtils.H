@@ -27,7 +27,7 @@ namespace ScatteringUtils {
      */
     struct AnisotropicCoefficientTable
     {
-        amrex::ParticleReal const* m_energies = nullptr;  ///< Increasing energy grid [MeV].
+        amrex::ParticleReal const* m_energies = nullptr;  ///< Increasing energy grid [eV].
         amrex::ParticleReal const* m_coefficients = nullptr;  ///< Coefficients grouped by energy.
         int m_num_energies = 0;  ///< Number of energy rows.
         int m_num_coefficients = 0;  ///< Number of Legendre orders stored in each row.
@@ -40,14 +40,14 @@ namespace ScatteringUtils {
          * An energy outside the table uses the nearest endpoint row; the caller is
          * responsible for warning that this clamping occurred.
          *
-         * @param[in] a_energy_MeV centre-of-mass energy in MeV
+         * @param[in] a_energy centre-of-mass energy in eV
          * @param[in] a_coefficient_index column index into the coefficient table
          * @return interpolated (or clamped) coefficient value
          */
         [[nodiscard]]
         AMREX_GPU_HOST_DEVICE AMREX_INLINE
         amrex::ParticleReal getCoefficient (
-            amrex::ParticleReal const a_energy_MeV,
+            amrex::ParticleReal const a_energy,
             int const a_coefficient_index) const
         {
             using namespace amrex::literals;
@@ -58,17 +58,17 @@ namespace ScatteringUtils {
             // (m_num_energies - 1) * m_num_coefficients.
             // a_coefficient_index selects a coefficient within either block.
             // Do not extrapolate the fitted coefficients beyond the tabulated energies.
-            if (a_energy_MeV <= m_energies[0]) {
+            if (a_energy <= m_energies[0]) {
                 return m_coefficients[a_coefficient_index];
             }
-            if (a_energy_MeV >= m_energies[m_num_energies - 1]) {
+            if (a_energy >= m_energies[m_num_energies - 1]) {
                 return m_coefficients[(m_num_energies - 1) * m_num_coefficients + a_coefficient_index];
             }
 
-            // Find lo and hi such that m_energies[lo] < a_energy_MeV <= m_energies[hi].
+            // Find lo and hi such that m_energies[lo] < a_energy <= m_energies[hi].
             // TODO: replace this linear scan with a binary search for large tables.
             int hi = 1;
-            while ((hi < m_num_energies - 1) && (a_energy_MeV > m_energies[hi])) {
+            while ((hi < m_num_energies - 1) && (a_energy > m_energies[hi])) {
                 ++hi;
             }
             int const lo = hi - 1;
@@ -80,7 +80,7 @@ namespace ScatteringUtils {
             amrex::ParticleReal const coeff_hi = m_coefficients[hi * m_num_coefficients + a_coefficient_index];
 
             // interp is zero at the lower row and one at the upper row.
-            amrex::ParticleReal const interp = (a_energy_MeV - energy_lo) / (energy_hi - energy_lo);
+            amrex::ParticleReal const interp = (a_energy - energy_lo) / (energy_hi - energy_lo);
 
             return coeff_lo + (coeff_hi - coeff_lo) * interp;
         }
@@ -100,7 +100,7 @@ namespace ScatteringUtils {
      * which the cumulative distribution \f$F(\mu)\f$ equals \p a_random_number.
      *
      * @param[in] a_coefficient_table table of anisotropic Legendre coefficients
-     * @param[in] a_energy_MeV center-of-mass kinetic energy in MeV
+     * @param[in] a_energy center-of-mass kinetic energy in eV
      * @param[in] a_random_number uniform random number in [0,1]
      * @param[in,out] a_energy_range_status optional per-event status.
      *     The caller initializes it to zero; this function changes it to -1 below the table
@@ -110,7 +110,7 @@ namespace ScatteringUtils {
     AMREX_GPU_HOST_DEVICE AMREX_INLINE
     amrex::ParticleReal sampleCosTheta (
         AnisotropicCoefficientTable const& a_coefficient_table,
-        amrex::ParticleReal const a_energy_MeV,
+        amrex::ParticleReal const a_energy,
         amrex::ParticleReal const a_random_number,
         int* const a_energy_range_status)
     {
@@ -125,9 +125,10 @@ namespace ScatteringUtils {
         // Record whether getCoefficient will clamp this event's energy.
         // Do this once here, rather than once for every coefficient during every iteration below.
         if (a_energy_range_status != nullptr) {
-            if (a_energy_MeV < a_coefficient_table.m_energies[0]) {
+            if (a_energy < a_coefficient_table.m_energies[0]) {
                 *a_energy_range_status = -1;
-            } else if (a_energy_MeV > a_coefficient_table.m_energies[a_coefficient_table.m_num_energies - 1]) {
+            } else if (a_energy > a_coefficient_table.m_energies[a_coefficient_table.m_num_energies - 1])
+            {
                 *a_energy_range_status = 1;
             }
         }
@@ -150,7 +151,7 @@ namespace ScatteringUtils {
                 // Use Bonnet's recurrence for the next Legendre polynomial:
                 // (l + 1) P_{l+1}(mu) = (2l + 1) mu P_l(mu) - l P_{l-1}(mu).
                 amrex::ParticleReal const P_l_plus_one = ((2.0_prt * l_prt + 1.0_prt) * mu * P_l - l_prt * P_l_minus_one) / (l_prt + 1.0_prt);
-                amrex::ParticleReal const coefficient = a_coefficient_table.getCoefficient(a_energy_MeV, l);
+                amrex::ParticleReal const coefficient = a_coefficient_table.getCoefficient(a_energy, l);
 
                 // Accumulate the PDF and its integral.
                 // The identity integral(P_l dmu) = (P_{l+1} - P_{l-1}) / (2l + 1) gives the CDF term.

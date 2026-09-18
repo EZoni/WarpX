@@ -229,15 +229,12 @@ namespace ParticleUtils {
     }
 
     /**
-     * \brief Generate a random angle with isotropic or anisotropic distribution,
-     * following the method described in equations (27)-(31) or (36)-(42) of
-     * Higginson et al., J. Comput. Phys. 388 (2019),
-     * https://doi.org/10.1016/j.jcp.2019.03.020.
+     * \brief Generate a random angle with isotropic or anisotropic distribution.
      *
      * @param[in] engine the random engine
      * @param[in] scattering_angle_model the scattering angle distribution to use
      * @param[in] anisotropic_coefficients table of coefficients for anisotropic scattering
-     * @param[in] collision_energy_MeV center-of-mass collision energy in MeV
+     * @param[in] collision_energy center-of-mass collision energy in eV
      * @param[out] energy_range_status per-event status: -1 below, 0 within, 1 above
      */
     AMREX_GPU_HOST_DEVICE AMREX_INLINE
@@ -245,7 +242,7 @@ namespace ParticleUtils {
         amrex::RandomEngine const& engine,
         ScatteringAngleModel scattering_angle_model,
         ScatteringUtils::AnisotropicCoefficientTable const& anisotropic_coefficients,
-        amrex::ParticleReal const collision_energy_MeV,
+        amrex::ParticleReal const collision_energy,
         int* const energy_range_status)
     {
         using namespace amrex::literals;
@@ -258,7 +255,7 @@ namespace ParticleUtils {
             cos_theta = 2.0_prt * amrex::Random(engine) - 1.0_prt;  // opposite sign of that in Higginson's paper
         }
         else if (scattering_angle_model == ScatteringAngleModel::Legendre) {
-            cos_theta = ScatteringUtils::sampleCosTheta(anisotropic_coefficients, collision_energy_MeV, amrex::Random(engine), energy_range_status);
+            cos_theta = ScatteringUtils::sampleCosTheta(anisotropic_coefficients, collision_energy, amrex::Random(engine), energy_range_status);
         }
         return cos_theta;
     }
