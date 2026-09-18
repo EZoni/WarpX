@@ -51,17 +51,10 @@ REACTION_CONFIG = {
 # tolerances account for random sampling, compute backends, and precision while
 # remaining regression-sensitive. The paper-reproduction runs at 1% and 5% are
 # validated by the kinematic consistency checks above rather than fixed metrics.
+REFERENCE_GAMMA_BETA_PERCENT = 10
 REFERENCE_METRICS = {
-    "DD": {
-        10: {
-            "mean_energy": 7.13244,
-            "std_energy": 3.88327,
-            "mean_cos_theta": -0.000100,
-        },
-    },
-    "DT": {
-        10: {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.088694},
-    },
+    "DD": {"mean_energy": 7.13244, "std_energy": 3.88327, "mean_cos_theta": -0.000100},
+    "DT": {"mean_energy": 19.9284, "std_energy": 4.81147, "mean_cos_theta": 0.088694},
 }
 
 
@@ -159,13 +152,13 @@ def get_cm_kinematics(diag_dir, reaction):
     product_mass = REACTION_CONFIG[reaction]["product_mass"]
 
     # The target is stationary and the beam is monoenergetic.  Its input momentum is
-    # u/c = gamma*beta, so the total reactant four-momentum gives one exact CM boost
+    # u/c = gamma*beta, so the total reactant four-momentum gives one exact COM boost
     # for the entire run.
     cm_beta = beam_mass * beam_u / (beam_mass * beam_gamma + target_mass)
     cm_gamma = 1.0 / np.sqrt(1.0 - cm_beta**2)
 
     # The invariant mass of the reactants fixes the energy and momentum of both
-    # products in the CM frame for this two-body reaction.
+    # products in the COM frame for this two-body reaction.
     cm_mass = np.sqrt(
         beam_mass**2 + target_mass**2 + 2.0 * beam_mass * target_mass * beam_gamma
     )
@@ -197,14 +190,14 @@ def get_neutron_spectrum(diag_dir, reaction):
         diag_dir, reaction
     )
     # For this monoenergetic two-body reaction, the lab-frame neutron energy is
-    # exactly linear in its CM-frame direction cosine:
+    # exactly linear in its COM-frame direction cosine:
     # E_lab = gamma_cm * (E_n_cm + beta_cm * p_n_cm * c * mu_cm).
     neutron_energy_lab = gamma * m_neutron * scc.c**2
     cos_theta_from_energy = (neutron_energy_lab / cm_gamma - neutron_energy_cm) / (
         cm_beta * neutron_momentum_cm_c
     )
 
-    # Independently reconstruct the CM-frame direction from the momentum vector.
+    # Independently reconstruct the COM-frame direction from the momentum vector.
     # Longitudinal momentum transforms as
     # p_z,lab*c = gamma_cm*(beta_cm*E_n,cm + p_n,cm*c*cos(theta)),
     # while transverse momentum is invariant under the boost.  These checks catch
@@ -220,14 +213,14 @@ def get_neutron_spectrum(diag_dir, reaction):
         cos_theta_from_momentum,
         rtol=1.0e-9,
         atol=1.0e-9,
-        err_msg="CM direction inferred from neutron energy and momentum disagrees",
+        err_msg="COM direction inferred from neutron energy and momentum disagrees",
     )
     np.testing.assert_allclose(
         momentum_perp_lab_c**2,
         neutron_momentum_cm_c**2 * (1.0 - cos_theta_from_momentum**2),
         rtol=1.0e-9,
         atol=1.0e-9 * neutron_momentum_cm_c**2,
-        err_msg="Neutron transverse momentum is inconsistent with its CM direction",
+        err_msg="Neutron transverse momentum is inconsistent with its COM direction",
     )
     cos_theta = np.clip(cos_theta_from_energy, -1.0, 1.0)
     return energy_MeV, cos_theta, w
@@ -252,8 +245,8 @@ def validate_neutron_spectrum(diag_dir, reaction):
     }
 
     gamma_beta_percent = beam_gamma_beta_percent(diag_dir)
-    reference = REFERENCE_METRICS[reaction].get(gamma_beta_percent)
-    if reference is not None:
+    if gamma_beta_percent == REFERENCE_GAMMA_BETA_PERCENT:
+        reference = REFERENCE_METRICS[reaction]
         np.testing.assert_allclose(
             [metrics["mean_energy"], metrics["std_energy"]],
             [reference["mean_energy"], reference["std_energy"]],
@@ -334,10 +327,11 @@ def plot_neutron_spectra(diag_dirs, labels, reaction, config, output):
     ax_angle.set_yticks([0.0, 60.0, 120.0, 180.0])
     ax_spectrum.set_xlabel(r"$E_n$ (MeV)")
     ax_spectrum.set_ylabel(r"$dN/dE_n$ (arb. units)")
-    ax_angle.set_ylabel(r"$\theta_\mathrm{CM}$ (degrees)")
+    ax_angle.set_ylabel(r"$\theta_\mathrm{COM}$ (degrees)")
     ax_spectrum.legend(frameon=False, loc="upper right", fontsize=8)
     ax_spectrum.minorticks_on()
     ax_angle.minorticks_on()
+    ax_spectrum.grid(which="both", linewidth=0.5, alpha=0.3)
 
     fig.savefig(output, dpi=200)
     print(f"Saved {output}")
