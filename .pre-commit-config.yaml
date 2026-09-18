@@ -71,7 +71,7 @@ repos:
   rev: v23.1.0
   hooks:
   - id: clang-format
-    files: '^Source/main.cpp'
+    files: \.(H|cpp)$
 
 # Python: Ruff linter & formatter
 #   https://docs.astral.sh/ruff/
